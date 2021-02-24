@@ -9,7 +9,7 @@
 
 (defcustom octopus-org-ql-default-predicate
   '(not (tags "ARCHIVE"))
-  "FIXME"
+  "Default `org-ql' predicate for various commands."
   :type 'sexp)
 
 ;;;; Completing-read like interface for Org markers
@@ -18,16 +18,30 @@
   (if (require 'helm nil t)
       'helm
     #'completing-read)
-  "FIXME"
+  "Completion interface used to select Org markers.
+
+If available, `helm' is recommended.
+
+Alternatively, you can specify a function which is compatible
+with `completing-read'."
   :type '(choice (const :tag "Helm" helm)
                  function))
 
 (cl-defun octopus--user-select-org-marker (prompt markers &key name)
+  "Make the user select an Org marker from candidates.
+
+When `octopus-org-marker-select-interface' is set to helm,
+PROMPT, MARKERS, and NAME are passed to
+`octopus-helm-org-marker', which see.
+
+Otherwise, the function specified in the variable are used as a
+completion interface."
   (pcase octopus-org-marker-select-interface
     (`helm
      (octopus-helm-org-marker prompt markers
                               ((predicate functionp)
-                               :name name))
+                               :name name)))
+    (_
      (->> (funcall octopus-org-marker-select-interface
                    prompt
                    (-map (lambda (marker)
@@ -38,6 +52,16 @@
           (get-char-property 0 'org-marker choice)))))
 
 (defmacro octopus--single-or (items exp &optional null-message)
+  "If necessary, pick an item from multiple candidates using a given expression.
+
+If ITEMS contain only one element, return it.
+
+If there are multiple items, evalate EXP to pick an item. The
+expression should be a call to `completing-read'-like interface,
+e.g. `octopus--user-select-org-marker'.
+
+If the first argument is nil, it throws an error. You can specify
+the error message as NULL-MESSAGE."
   (declare (indent 1))
   `(pcase ,items
      (`nil
@@ -50,6 +74,7 @@
 ;;;; Building queries
 
 (defun octopus--ql-expand (exp)
+  "Expand project-related ql predicates in EXP."
   (declare (indent 0))
   (macroexpand-all
    exp
@@ -79,6 +104,9 @@
 ;;;; Querying
 ;; Call `org-ql-select' to get a list of markers matching a certain condition.
 (cl-defun octopus--ql-select (predicate &key (action #'point-marker) sort)
+  "An internal wrapper for `org-ql-select'.
+
+PREDICATE, ACTION, and SORT are passed to the function, which see."
   (declare (indent 1))
   (org-ql-select (octopus-org-files)
     (octopus--ql-expand predicate)
@@ -86,6 +114,10 @@
     :sort sort))
 
 (cl-defun octopus--ql-search (predicate &key sort title super-groups)
+  "An internal wrapper for `org-ql-search'.
+
+PREDICATE, ACTION, SORT, and TITLE are passed to the function,
+which see."
   (declare (indent 1))
   (org-ql-search (octopus-org-files)
     (octopus--ql-expand predicate)
@@ -101,7 +133,9 @@
   (intern (concat ":" octopus-remote-repo-property-name)))
 
 (defun octopus--dir-element-first (a b)
-  "Compare two Org elements so entries with the directory property come first."
+  "Compare two Org elements so entries with the directory property come first.
+
+A and B must be Org elements."
   (funcall (-on #'>
                 (lambda (x)
                   (cond
@@ -112,11 +146,17 @@
            a b))
 
 (defun octopus--collect-org-property-values (property)
-  (->> (octopus--ql-select
-           `(default-and (property ,property))
-         :action `(org-entry-get nil property))
+  "Return all values of PROPERTY in `octopus-org-files'."
+  (->> (octopus-org-files)
+       (-map (lambda (file)
+               (with-current-buffer (or (find-buffer-visiting file)
+                                        (find-file-noselect file))
+                 (org-property-values property))))
        (-non-nil)
+       (-flatten-n 1)
        (-uniq)
+       ;; I don't know if lexicographical sorting suits every situation.
+       ;; Maybe using frecency will be better.
        (-sort #'string<)))
 
 (provide 'octopus-org-ql)
