@@ -34,7 +34,7 @@
 (require 'octopus-org-ql)
 (require 'octopus-utils)
 
-(defgroup octopus
+(defgroup octopus nil
   "FIXME"
   :group 'org
   :group 'project)
