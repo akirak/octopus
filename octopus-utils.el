@@ -1,8 +1,41 @@
 ;;; octopus-utils.el --- Utilities for octopus -*- lexical-binding: t -*-
 
+;; Copyright (C) 2021 Akira Komamura
+
+;; Author: Akira Komamura <akira.komamura@gmail.com>
+;; Version: 0.1
+;; URL: https://github.com/akirak/octopus.el
+
+;; This file is not part of GNU Emacs.
+
+;;; License:
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This library provides utilities.
+
+;;; Code:
+
+(require 'dash)
+(require 'project)
+
 (defcustom octopus-default-git-remote-name "origin"
   "Name of the default Git remote."
-  :type 'string)
+  :type 'string
+  :group 'octopus)
 
 (defun octopus--default-git-remote-url (&optional dir)
   "Return the URL of the default Git remote at DIR.
@@ -70,8 +103,8 @@ The remote name is specified by `octopus-default-git-remote-name'."
 
 (defun octopus--abbreviate-remote-url (dir)
   "Return the flake URL of the default remote at DIR."
-  (-some->> (octopus--default-git-remote-url dir)
-    (octopus--flake-url)))
+  (when-let (url (octopus--default-git-remote-url dir))
+    (octopus--flake-url url)))
 
 (defsubst octopus--project-root (&optional maybe-prompt)
   "Return the project root at the default directory.

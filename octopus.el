@@ -1,6 +1,43 @@
 ;;; octopus.el --- Integration between Org and project.el -*- lexical-binding: t -*-
 
+;; Copyright (C) 2021 Akira Komamura
+
+;; Author: Akira Komamura <akira.komamura@gmail.com>
+;; Version: 0.1
+;; Package-Requires: ((emacs "27.1") (project "0.5.3") (org-ql "0.6") (dash "2.18"))
+;; Keywords: outlines convenience
+;; URL: https://github.com/akirak/octopus.el
+
+;; This file is not part of GNU Emacs.
+
+;;; License:
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; FIXME
+
+;;; Code:
+
+(require 'octopus-org-ql)
 (require 'octopus-utils)
+
+(defgroup octopus
+  "FIXME"
+  :group 'org
+  :group 'project)
 
 ;;;; Custom variables
 
@@ -142,7 +179,10 @@ It uses `octopus-browse-project-dir-function' to display a directory."
 
 ;;;###autoload
 (defun octopus-org-set-project-remote-repo (&optional arg)
-  "Set the project remote repository property in Org."
+  "Set the project remote repository property in Org.
+
+If ARG is non-nil, it lets the user select a remote repository
+URL instead."
   (interactive "P")
   (octopus--org-put-new-property-with octopus-remote-repo-property-name
                                       (if arg
@@ -152,7 +192,7 @@ It uses `octopus-browse-project-dir-function' to display a directory."
                                                (-uniq)
                                                (completing-read "Origin: "))
                                         (octopus-select-from-session "Origin: "
-                                          (octopus--abbreviate-remote-url)))))
+                                                                     (octopus--abbreviate-remote-url)))))
 
 ;;;; Project todo list
 
@@ -168,7 +208,7 @@ It uses `octopus-browse-project-dir-function' to display a directory."
 
 Alternatively, you can use this command to display a todo list of
 a project based on the project root (with a single universal
-argument) or based on the remote repository (with two universal
+argument ARG) or based on the remote repository (with two universal
 arguments).
 
 Items a grouped by `octopus-project-todo-super-groups'."

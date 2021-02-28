@@ -1,9 +1,41 @@
 ;;; octopus-org-ql.el --- Org-ql for octopus -*- lexical-binding: t -*-
 
+;; Copyright (C) 2021 Akira Komamura
+
+;; Author: Akira Komamura <akira.komamura@gmail.com>
+;; Version: 0.1
+;; URL: https://github.com/akirak/octopus.el
+
+;; This file is not part of GNU Emacs.
+
+;;; License:
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This library provides infrastructure for the package with help of
+;; org-ql package.
+
+;;; Code:
+
 (require 'octopus-utils)
 (require 'octopus-org)
 
 (require 'org-ql)
+
+(declare helm-octopus-org-marker "ext:helm-octopus")
 
 ;;;; Custom variables
 
@@ -32,13 +64,13 @@ with `completing-read'."
 
 When `octopus-org-marker-select-interface' is set to helm,
 PROMPT, MARKERS, and NAME are passed to
-`octopus-helm-org-marker', which see.
+`helm-octopus-org-marker', which see.
 
 Otherwise, the function specified in the variable are used as a
 completion interface."
   (pcase octopus-org-marker-select-interface
     (`helm
-     (octopus-helm-org-marker prompt markers
+     (helm-octopus-org-marker prompt markers
                               ((predicate functionp)
                                :name name)))
     (_
@@ -116,8 +148,8 @@ PREDICATE, ACTION, and SORT are passed to the function, which see."
 (cl-defun octopus--ql-search (predicate &key sort title super-groups)
   "An internal wrapper for `org-ql-search'.
 
-PREDICATE, ACTION, SORT, and TITLE are passed to the function,
-which see."
+PREDICATE, SORT, TITLE, and SUPER-GROUPS are passed to
+`org-ql-search', which see."
   (declare (indent 1))
   (org-ql-search (octopus-org-files)
     (octopus--ql-expand predicate)
