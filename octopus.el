@@ -136,8 +136,8 @@ Otherwise, it returns a marker."
                          :sort #'octopus--dir-element-first))
                   (octopus--single-or it
                     (octopus--select-org-marker
-                     "Select a subtree to display: "
-                     it "Org subtrees for the project")
+                     "Select a subtree to display: " it
+                     :name "Org subtrees for the project")
                     "No subtree for the project"))))
     (if (or interactive (called-interactively-p))
         (octopus--display-org-marker marker)

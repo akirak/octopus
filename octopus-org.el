@@ -86,7 +86,7 @@ This uses `octopus-display-org-buffer-function' and
     (funcall octopus-display-org-buffer-function (current-buffer))
     (widen)
     (goto-char marker)
-    (when (boundp octopus-org-tree-show-function)
+    (when (bound-and-true-p octopus-org-tree-show-function)
       (funcall octopus-org-tree-show-function))))
 
 (defsubst octopus-org-files ()
