@@ -69,6 +69,10 @@ You can use `magit-status', `dired', etc."
   "Call `octopus-browse-dir-fn' on a project DIR."
   (funcall octopus-browse-dir-fn dir))
 
+(defcustom octopus-org-dwim-commands t
+  "FIXME"
+  :type 'boolean)
+
 ;;;; Macros
 
 (defmacro octopus--org-put-property-from-exp-once (property exp)
@@ -242,7 +246,10 @@ Items a grouped by `octopus-todo-super-groups'."
         octopus-dir-property-name))))
     (_
      (octopus--project-todo-list
-      (octopus--project-root)))))
+      (if (and octopus-org-dwim-commands
+               (derived-mode-p 'org-mode))
+          (octopus--org-project-root)
+        (octopus--project-root))))))
 
 (defun octopus--project-todo-list (root)
   "Display a todo list of a project at ROOT."

@@ -204,6 +204,12 @@ You should specify on of those."
                     (list :root (octopus-select-project-dir-in-org)))
                    ((and remote (not (stringp remote)))
                     (list :remote (octopus-select-project-remote-repo-in-org)))
+                   ((and octopus-org-dwim-commands
+                         (derived-mode-p 'org-mode))
+                    (or (-some->> (octopus--org-project-dir)
+                          (list :root))
+                        (-some->> (octopus--org-project-remote)
+                          (list :remote))))
                    (t
                     (list :root root :remote remote)))))
     (apply #'octopus--capture-todo-entry
