@@ -210,6 +210,7 @@ URL instead."
   "`org-super-agenda' groups used in `octopus-todo-list' command."
   :type 'sexp)
 
+;;;###autoload
 (defun octopus-todo-list (arg)
   "Display a todo list of the current project.
 
