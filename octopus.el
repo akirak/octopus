@@ -156,13 +156,17 @@ It uses `octopus-browse-dir-fn' to display a directory."
   (unless (derived-mode-p 'org-mode)
     (user-error "Must be run in org-mode"))
   (assert (not (org-before-first-heading-p)))
-  (if-let (root (or (octopus--org-project-dir)
-                    (-some->> (octopus--org-project-remote)
-                      (octopus--find-repository-by-remote-url))))
+  (if-let (root (octopus--org-project-root))
       (if (or interactive (called-interactively-p))
           (octopus--browse-dir it)
         it)
     (user-error "No property for the project identity")))
+
+(defun octopus--org-project-root ()
+  "Get the root directory of the Org context, possibly with a remote."
+  (or (octopus--org-project-dir)
+      (-some->> (octopus--org-project-remote)
+        (octopus--find-repository-by-remote-url))))
 
 (defun octopus--find-repository-by-remote-url (remote-repo)
   "Find a local repository matching REMOTE-REPO."
