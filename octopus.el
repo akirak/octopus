@@ -27,7 +27,7 @@
 
 ;;; Commentary:
 
-;; FIXME
+;; octopus.el provides an integration between Org and project.el.
 
 ;;; Code:
 
@@ -35,7 +35,7 @@
 (require 'octopus-utils)
 
 (defgroup octopus nil
-  "FIXME"
+  "Integration between Org and project.el."
   :group 'org
   :group 'project)
 
