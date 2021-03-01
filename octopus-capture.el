@@ -128,8 +128,8 @@ subtree instead."
      (octopus-display-project-org-subtree t))
     (_
      (let ((marker (--> (octopus--ql-select '(default-and (children (any-project)))
-                                            :action '(prog1 (point-marker)
-                                                       (org-end-of-subtree)))
+                          :action '(prog1 (point-marker)
+                                     (org-end-of-subtree)))
                      (octopus--user-select-org-marker
                       "Project context: " parent-markers
                       :name "Parents of existing project subtrees"))))
@@ -154,23 +154,23 @@ This function is intended for internal use."
                            `(project-remote-property ,remote)
                          `(project ,root)))
          (parents (or (octopus--ql-select
-                       `(default-and (ancestors ,subtree-pred)
-                          (property "PROJECT_CAPTURE_LOCATION"))
-                       :action #'point-marker)
+                          `(default-and (ancestors ,subtree-pred)
+                             (property "PROJECT_CAPTURE_LOCATION"))
+                        :action #'point-marker)
                       (octopus--ql-select
-                       `(default-and (ancestors ,subtree-pred)
-                          (children (todo)))
-                       :action `(prog1 (point-marker)
-                                  (org-end-of-subtree)))
+                          `(default-and (ancestors ,subtree-pred)
+                             (children (todo)))
+                        :action `(prog1 (point-marker)
+                                   (org-end-of-subtree)))
                       ;; Otherwise, create todos directly below the project subtree
                       (octopus--ql-select
-                       `(default-and ,subtree-pred)
-                       :action #'point-marker)))
+                          `(default-and ,subtree-pred)
+                        :action #'point-marker)))
          (parent (octopus--single-or parents
-                                     (octopus--user-select-org-marker
-                                      "Select a capture location: "
-                                      parents (format "Project %s" identity))
-                                     "Cannot find project destination")))
+                   (octopus--user-select-org-marker
+                    "Select a capture location: "
+                    parents (format "Project %s" identity))
+                   "Cannot find project destination")))
     (switch-to-buffer (marker-buffer parent))
     (widen)
     (goto-char parent)))

@@ -74,8 +74,7 @@ NAME will be the name of the Helm sync source."
   (helm :prompt prompt
         :sources
         (helm-octopus--org-marker-sync-source name
-                                              markers
-                                              :action #'identity)))
+          markers :action #'identity)))
 
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here
