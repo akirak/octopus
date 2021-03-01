@@ -37,6 +37,26 @@
   :type 'string
   :group 'octopus)
 
+(defmacro octopus--single-or (items exp &optional null-message)
+  "If necessary, pick an item from multiple candidates using a given expression.
+
+If ITEMS contain only one element, return it.
+
+If there are multiple items, evalate EXP to pick an item. The
+expression should be a call to `completing-read'-like interface,
+e.g. `octopus--select-org-marker'.
+
+If the first argument is nil, it throws an error. You can specify
+the error message as NULL-MESSAGE."
+  (declare (indent 1))
+  `(pcase ,items
+     (`nil
+      (error ,(or null-message "Empty list")))
+     (`(,item)
+      item)
+     (_
+      ,exp)))
+
 (defun octopus--default-git-remote-url (&optional dir)
   "Return the URL of the default Git remote at DIR.
 

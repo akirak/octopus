@@ -59,7 +59,7 @@ with `completing-read'."
   :type '(choice (const :tag "Helm" helm)
                  function))
 
-(cl-defun octopus--user-select-org-marker (prompt markers &key name)
+(cl-defun octopus--select-org-marker (prompt markers &key name)
   "Make the user select an Org marker from candidates.
 
 When `octopus-org-marker-select-interface' is set to helm,
@@ -82,26 +82,6 @@ completion interface."
                                (propertize 'org-marker marker)))
                          markers))
           (get-char-property 0 'org-marker choice)))))
-
-(defmacro octopus--single-or (items exp &optional null-message)
-  "If necessary, pick an item from multiple candidates using a given expression.
-
-If ITEMS contain only one element, return it.
-
-If there are multiple items, evalate EXP to pick an item. The
-expression should be a call to `completing-read'-like interface,
-e.g. `octopus--user-select-org-marker'.
-
-If the first argument is nil, it throws an error. You can specify
-the error message as NULL-MESSAGE."
-  (declare (indent 1))
-  `(pcase ,items
-     (`nil
-      (error ,(or null-message "Empty list")))
-     (`(,item)
-      item)
-     (_
-      ,exp)))
 
 ;;;; Building queries
 
@@ -177,7 +157,7 @@ A and B must be Org elements."
                     1))))
            a b))
 
-(defun octopus--collect-org-property-values (property)
+(defun octopus--org-property-values (property)
   "Return all values of PROPERTY in `octopus-org-files'."
   (->> (octopus-org-files)
        (-map (lambda (file)

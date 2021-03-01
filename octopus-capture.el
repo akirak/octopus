@@ -70,37 +70,22 @@ See `org-capture-templates' for the syntax."
             "")
           (or body "")))
 
-(defcustom octopus-default-todo-capture-template
-  (octopus-entry-capture-template :todo "TODO"
-                                  :heading "%?"
-                                  :tag-prompt t)
-  "Template body used in `octopus-capture-project-todo'."
-  :type 'string)
-
-(defcustom octopus-todo-capture-options
-  '(:clock-in t :clock-resume t)
-  "`org-capture-templates' options for todo capture templates."
-  :type 'plist)
-
-(defcustom octopus-alternative-todo-capture-template-alist
-  `((started-with-input
-     . ,(octopus-entry-capture-template
-         :todo "STARTED"
-         :heading "%i"
-         :body "%a\n\n%?")))
+(defcustom octopus-capture-template-alist
+  `((todo
+     ,(octopus-entry-capture-template :todo "TODO"
+                                      :heading "%?"
+                                      :tag-prompt t))
+    (project
+     ,(octopus-entry-capture-template :heading "%?"))
+    (current-from-title
+     ,(octopus-entry-capture-template
+       :todo "STARTED"
+       :heading "%i"
+       :body "%a\n\n%?")
+     :clock-in t :clock-resume t))
   "Alist of todo capture templates."
   :type '(alist :key-type symbol
-                :value-type plist))
-
-(defcustom octopus-project-capture-template
-  (octopus-entry-capture-template :heading "%?")
-  "Template body for `octopus-capture-project-todo'."
-  :type 'string)
-
-(defcustom octopus-project-capture-options
-  '(:clock-in t :clock-resume t)
-  "`org-capture-templates' options for project capture templates."
-  :type 'plist)
+                :value-type (cons string plist)))
 
 (defun octopus--capture-entry-to-marker (marker template &rest props)
   "Capture an entry to a given marker.
@@ -117,7 +102,7 @@ is a plist as in each entry in `org-capture-templates'."
     (org-capture)))
 
 ;;;###autoload
-(defun octopus-create-project-subtree (&optional arg)
+(defun octopus-capture-project (&optional arg)
   "Create an Org subtree for the current project.
 
 If two universal prefixes are given as ARG, it displays a project
@@ -125,20 +110,19 @@ subtree instead."
   (interactive "P")
   (pcase arg
     (`(16)
-     (octopus-display-project-org-subtree t))
+     (octopus-project-org-root t))
     (_
      (let ((marker (--> (octopus--ql-select '(default-and (children (any-project)))
                           :action '(prog1 (point-marker)
                                      (org-end-of-subtree)))
-                     (octopus--user-select-org-marker
+                     (octopus--select-org-marker
                       "Project context: " parent-markers
                       :name "Parents of existing project subtrees"))))
        (apply #'octopus--capture-entry-to-marker
               marker
-              octopus-project-capture-template
-              octopus-project-capture-options)))))
+              (alist-get 'project octopus-capture-template-alist))))))
 
-(cl-defun octopus-goto-todo-location (&key root remote)
+(cl-defun octopus-todo-capture-location (&key root remote)
   "Go to a location in which todo entries should be created.
 
 Either ROOT or REMOTE should be given. The former is the root
@@ -167,7 +151,7 @@ This function is intended for internal use."
                           `(default-and ,subtree-pred)
                         :action #'point-marker)))
          (parent (octopus--single-or parents
-                   (octopus--user-select-org-marker
+                   (octopus--select-org-marker
                     "Select a capture location: "
                     parents (format "Project %s" identity))
                    "Cannot find project destination")))
@@ -175,27 +159,29 @@ This function is intended for internal use."
     (widen)
     (goto-char parent)))
 
-(defun octopus--capture-entry-to-todo-location (location-spec
-                                                template
-                                                &rest props)
+(defun octopus--capture-todo-entry (location-spec
+                                    template
+                                    &rest props)
   "Creates a project todo entry from the given arguments.
 
 LOCATION-SPEC is a list of arguments passed to
-`octopus-goto-todo-location'.
+`octopus-todo-capture-location'.
 
 TEMPLATE and PROPS are arguments of an entry in `org-capture-templates'.
 The former is a string, and the latter is a plist."
   (let ((org-capture-entry `("p" "Project todo"
                              entry (function
-                                    (lambda () (octopus-goto-todo-location
+                                    (lambda () (octopus-todo-capture-location
                                                 ,@location-spec)))
                              ,template ,@props)))
     (org-capture)))
 
 ;;;###autoload
-(cl-defun octopus-capture-project-todo (&key template
-                                             root
-                                             remote)
+(cl-defun octopus-capture-todo (&optional template
+                                          &key
+                                          props
+                                          root
+                                          remote)
   "Create a project todo using `org-capture'.
 
 As an interactive function, the destination will be the current
@@ -205,9 +191,9 @@ repository with two universal arguments.
 
 As a non-interactive function, TEMPLATE is optional. It can be a
 literal string of the template body or a symbol in
-`octopus-alternative-todo-capture-template-alist'.
+`octopus-capture-template-alist'.
 
-ROOT and REMOTE are passed to `octopus-goto-todo-location'.
+ROOT and REMOTE are passed to `octopus-todo-capture-location'.
 You should specify on of those."
   (interactive (list :remote (equal current-prefix-arg '(16))
                      :root (equal current-prefix-arg '(4))))
@@ -217,23 +203,22 @@ You should specify on of those."
                    ((and remote (not (stringp remote)))
                     (list :remote (octopus-select-project-remote-repo-in-org)))
                    (t
-                    (list :root root :remote remote))))
-        (template-string (cl-etypecase template
-                           (null octopus-default-todo-capture-template)
-                           (string template)
-                           (symbol (or (alist-get template octopus-alternative-todo-capture-template-alist)
-                                       (user-error "Cannot find a template named %s" template))))))
-    (apply #'octopus--capture-entry-to-todo-location
-           location template-string
-           octopus-todo-capture-options)))
+                    (list :root root :remote remote)))))
+    (apply #'octopus--capture-todo-entry
+           location
+           (cl-etypecase template
+             (string (cons template props))
+             (null (alist-get 'todo octopus-capture-template-alist))
+             (symbol (or (alist-get template octopus-capture-template-alist)
+                         (user-error "Cannot find a template named %s" template)))))))
 
 ;; Provided as an example.
 ;;;###autoload
-(defun octopus-start-project-todo-with-title (title)
+(defun octopus-capture-current-activity (title)
   "Create a todo for the current project with a given TITLE."
   (interactive "sName of the task: ")
   (let ((org-capture-initial title))
-    (octopus-capture-project-todo 'started-with-input)))
+    (octopus-capture-todo 'current-from-title)))
 
 (provide 'octopus-capture)
 ;;; octopus-capture.el ends here
