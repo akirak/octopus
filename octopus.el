@@ -291,5 +291,18 @@ Items a grouped by `octopus-todo-super-groups'."
            (descendants (and (todo)
                              (not (todo "DONE"))))))))
 
+;;;###autoload
+(defun octopus-sparse-tree-todos (kwd)
+  "Show sparse trees of project roots with unfinished todos."
+  (interactive (list (when current-prefix-arg
+                       (completing-read "Todo keyword: "
+                                        (-map #'car org-todo-kwd-alist)))))
+  (org-ql-sparse-tree
+   (octopus--ql-expand
+     `(and (todo ,@(when kwd
+                     (list kwd)))
+           (not (todo "DONE"))
+           (ancestors (any-project))))))
+
 (provide 'octopus)
 ;;; octopus.el ends here
