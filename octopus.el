@@ -260,5 +260,25 @@ Items a grouped by `octopus-todo-super-groups'."
     :title (format "Project %s" remote)
     :super-groups octopus-todo-super-groups))
 
+;;;; Sparse trees
+
+;;;###autoload
+(defun octopus-sparse-tree ()
+  "Show sparse trees of project roots."
+  (interactive)
+  (org-ql-sparse-tree
+   (octopus--ql-expand
+     '(any-project))))
+
+;;;###autoload
+(defun octopus-sparse-tree-with-todos ()
+  "Show sparse trees of project roots with unfinished todos."
+  (interactive)
+  (org-ql-sparse-tree
+   (octopus--ql-expand
+     '(and (any-project)
+           (descendants (and (todo)
+                             (not (todo "DONE"))))))))
+
 (provide 'octopus)
 ;;; octopus.el ends here
