@@ -71,9 +71,8 @@ completion interface."
   (pcase octopus-org-marker-select-interface
     (`helm
      (helm-octopus-org-marker prompt markers
-                              ((predicate functionp)
-                               :name name)))
-    (_
+                              :name name))
+    ((pred functionp)
      (->> (funcall octopus-org-marker-select-interface
                    prompt
                    (-map (lambda (marker)

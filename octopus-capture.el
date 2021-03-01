@@ -32,6 +32,7 @@
 ;;; Code:
 
 (require 'octopus)
+(require 'octopus-org-ql)
 
 (defcustom octopus-capture-timestamp t
   "Whether to include a timestamp in capture templates.
@@ -116,7 +117,7 @@ subtree instead."
                           :action '(prog1 (point-marker)
                                      (org-end-of-subtree)))
                      (octopus--select-org-marker
-                      "Project context: " parent-markers
+                      "Project context: " it
                       :name "Parents of existing project subtrees"))))
        (apply #'octopus--capture-entry-to-marker
               marker
@@ -153,7 +154,8 @@ This function is intended for internal use."
          (parent (octopus--single-or parents
                    (octopus--select-org-marker
                     "Select a capture location: "
-                    parents (format "Project %s" identity))
+                    parents
+                    :name (format "Project %s" identity))
                    "Cannot find project destination")))
     (switch-to-buffer (marker-buffer parent))
     (widen)
