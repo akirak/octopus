@@ -72,7 +72,7 @@ See `org-capture-templates' for the syntax."
 
 (defcustom octopus-default-todo-capture-template
   (octopus-entry-capture-template :todo "TODO"
-                                  :title "%?"
+                                  :heading "%?"
                                   :tag-prompt t)
   "Template body used in `octopus-capture-project-todo'."
   :type 'string)
@@ -86,14 +86,14 @@ See `org-capture-templates' for the syntax."
   `((started-with-input
      . ,(octopus-entry-capture-template
          :todo "STARTED"
-         :title "%i"
+         :heading "%i"
          :body "%a\n\n%?")))
   "Alist of todo capture templates."
   :type '(alist :key-type symbol
                 :value-type plist))
 
 (defcustom octopus-project-capture-template
-  (octopus-entry-capture-template :title "%?")
+  (octopus-entry-capture-template :heading "%?")
   "Template body for `octopus-capture-project-todo'."
   :type 'string)
 
