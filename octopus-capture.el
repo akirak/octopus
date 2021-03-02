@@ -197,7 +197,8 @@ literal string of the template body or a symbol in
 
 ROOT and REMOTE are passed to `octopus-todo-capture-location'.
 You should specify on of those."
-  (interactive (list :remote (equal current-prefix-arg '(16))
+  (interactive (list nil
+                     :remote (equal current-prefix-arg '(16))
                      :root (equal current-prefix-arg '(4))))
   (let ((location (cond
                    ((and root (not (stringp root)))
