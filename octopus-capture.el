@@ -46,6 +46,18 @@ of the templates. If you customize all of the templates without
 using the function, this option will be ineffective."
   :type 'boolean)
 
+(defcustom octopus-capture-finish-but-clock-in nil
+  "Whether to clock in to the last captured entry.
+
+When this variable is non-nil, `octopus-capture-current-activity'
+assumes that the template has :immediate-finish property and
+clock into the captured task immediately.
+
+This is useful if you want to clock into a new entry from inside
+your code base but don't want to change the window
+configuration."
+  :type 'boolean)
+
 (cl-defun octopus-entry-capture-template (&key todo
                                                heading
                                                tag-prompt
@@ -78,12 +90,12 @@ See `org-capture-templates' for the syntax."
                                       :tag-prompt t))
     (project
      ,(octopus-entry-capture-template :heading "%?"))
-    (current-from-title
+    (current-with-input
      ,(octopus-entry-capture-template
        :todo "STARTED"
        :heading "%i"
        :body "%a\n\n%?")
-     :clock-in t :clock-resume t))
+     :immediate-finish t))
   "Alist of todo capture templates."
   :type '(alist :key-type symbol
                 :value-type (cons string plist)))
@@ -223,11 +235,22 @@ You should specify on of those."
 
 ;; Provided as an example.
 ;;;###autoload
-(defun octopus-capture-current-activity (title)
-  "Create a todo for the current project with a given TITLE."
+(defun octopus-capture-current-activity (input)
+  "Create a todo entry for the current project with INPUT.
+
+This dispatches a template named current-with-input in
+`octopus-capture-template-alist' with `org-capture-initial' set
+to the input. That is, %i placeholder will be replaced with the
+text.
+
+See also `octopus-capture-finish-but-clock-in'."
   (interactive "sName of the task: ")
-  (let ((org-capture-initial title))
-    (octopus-capture-todo 'current-from-title)))
+  (let ((org-capture-initial input))
+    (octopus-capture-todo 'current-with-input)
+    (when octopus-capture-finish-but-clock-in
+      (save-window-excursion
+        (org-capture-goto-last-stored)
+        (org-clock-in)))))
 
 (provide 'octopus-capture)
 ;;; octopus-capture.el ends here
