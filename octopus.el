@@ -73,6 +73,17 @@ You can use `magit-status', `dired', etc."
   "FIXME"
   :type 'boolean)
 
+(defcustom octopus-session-value-source 'buffers
+  "Source of session values.
+
+Some commands such as `octopus-org-set-project-dir' and
+`octopus-org-set-project-remote-repo' lets the user pick a value
+from the session.
+
+This option lets the user select a buffer from it."
+  :type '(choice (const windows)
+                 (const buffers)))
+
 ;;;; Macros
 
 (defmacro octopus--org-put-property-from-exp-once (property exp)
@@ -85,33 +96,23 @@ You can use `magit-status', `dired', etc."
        (user-error "This entry already has %s property set" ,property))
      (org-entry-put nil ,property ,exp)))
 
-(defmacro octopus--select-from-other-windows (prompt exp)
-  "Get a value from the buffers in other windows.
+(defsubst octopus--uniq-files (files)
+  "Remove duplicates from FILES."
+  (cl-remove-duplicates files :test #'file-equal-p))
 
-This displays PROMPT and asks the user to pick one of the values of EXP
-in other windows' buffers."
-  (declare (indent 1))
-  `(let* ((current ,exp)
-          (options (->> (let (results)
-                          (walk-windows
-                           (lambda (w)
-                             (push (with-current-buffer (window-buffer w)
-                                     ,exp)
-                                   results)))
-                          results)
-                        (-non-nil)
-                        (-uniq)
-                        (-remove-item current))))
-     (completing-read ,prompt options)))
-
-(defmacro octopus--select-from-session (prompt exp)
-  "Get a value from the current session.
-
-It prints PROMPT and asks the user to pick a value of EXP.
-
-For now, `octopus--select-from-other-windows' is used."
-  (declare (indent 1))
-  `(octopus--select-from-other-windows ,prompt ,exp))
+(defmacro octopus--session-values (exp)
+  "Evaluate EXP in each directory in the session and remove duplicates."
+  `(->> (cl-ecase octopus-session-value-source
+          (windows (walk-windows #'window-buffer))
+          (buffers (buffer-list)))
+        (--map (buffer-local-value 'default-directory it))
+        (-non-nil)
+        (-map #'expand-file-name)
+        (octopus--uniq-files)
+        (--map (let ((default-directory it))
+                 ,exp))
+        (-non-nil)
+        (-uniq)))
 
 ;;;; Find an Org tree for the project
 
@@ -193,8 +194,9 @@ It uses `octopus-browse-dir-fn' to display a directory."
   "Set the project directory property in Org."
   (interactive)
   (octopus--org-put-property-from-exp-once octopus-dir-property-name
-    (octopus--select-from-session "Project directory: "
-      (octopus--project-root))))
+    (completing-read "Project directory: "
+                     (octopus--uniq-files
+                      (octopus--session-values (octopus--project-root))))))
 
 ;;;###autoload
 (defun octopus-org-set-project-remote-repo (&optional arg)
@@ -210,8 +212,9 @@ URL instead."
              (-non-nil)
              (-uniq)
              (completing-read "Origin: "))
-      (octopus--select-from-session "Origin: "
-        (octopus--abbreviate-remote-url default-directory)))))
+      (completing-read "Origin: "
+                       (octopus--session-values
+                        (octopus--abbreviate-remote-url default-directory))))))
 
 ;;;; Project todo list
 
