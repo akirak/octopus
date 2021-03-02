@@ -260,6 +260,8 @@ Items a grouped by `octopus-todo-super-groups'."
 
 (defun octopus--project-todo-list (root)
   "Display a todo list of a project at ROOT."
+  (unless (octopus--ql-select `(project ,root))
+    (user-error "No Org tree found for project %s" root))
   (let ((default-directory root))
     (octopus--ql-search
         `(default-and
@@ -271,6 +273,8 @@ Items a grouped by `octopus-todo-super-groups'."
 
 (defun octopus--remote-todo-list (remote)
   "Display a todo list of a project on REMOTE."
+  (unless (octopus--ql-select `(project-remote-property ,remote))
+    (user-error "No Org tree found for project remote %s" remote))
   (octopus--ql-search
       `(default-and (todo)
          (not (todo "DONE"))
