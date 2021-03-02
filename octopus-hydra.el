@@ -39,9 +39,9 @@
   (let ((dir (octopus--org-project-dir))
         (remote (octopus--org-project-remote)))
     (if (or dir remote)
-        (concat " Org: Directory: " (or dir "-") "\n"
-                "      Remote:    " (or remote "-"))
-      " Org: Not in project")))
+        (concat " Directory: " (or dir "-") "\n"
+                " Remote:    " (or remote "-"))
+      " Not in project")))
 
 (defun octopus-hydra--project-title ()
   (let* ((dir (octopus--project-root))
