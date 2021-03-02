@@ -1,0 +1,1 @@
+(octopus-hydra :fetcher github :repo "akirak/octopus.el" :files ("octopus-hydra.el"))
