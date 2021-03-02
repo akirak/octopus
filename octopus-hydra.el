@@ -60,10 +60,10 @@
    :foreign-keys run
    :quit-key "Q")
   ("Show Org"
-   (("r" octopus-project-org-root "Project subtree" :exit t)
-    ("t" octopus-todo-list "Todo list" :exit t))
+   (("r" octopus-project-org-root "Project subtree")
+    ("t" octopus-todo-list "Todo list"))
    "Org project"
-   (("d" octopus-project-dir "Directory" :exit t)
+   (("d" octopus-project-dir "Directory")
     ("sd" octopus-org-set-project-dir "Set dir")
     ("sr" octopus-org-set-project-remote-repo "Set remote"))
    "Org sparse trees"
