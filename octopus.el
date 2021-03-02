@@ -162,8 +162,8 @@ It uses `octopus-browse-dir-fn' to display a directory."
   (assert (not (org-before-first-heading-p)))
   (if-let (root (octopus--org-project-root))
       (if (or interactive (called-interactively-p))
-          (octopus--browse-dir it)
-        it)
+          (octopus--browse-dir root)
+        root)
     (user-error "No property for the project identity")))
 
 (defun octopus--org-project-root ()
@@ -207,7 +207,7 @@ URL instead."
              (-uniq)
              (completing-read "Origin: "))
       (octopus--select-from-session "Origin: "
-        (octopus--abbreviate-remote-url)))))
+        (octopus--abbreviate-remote-url default-directory)))))
 
 ;;;; Project todo list
 

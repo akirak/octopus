@@ -107,10 +107,10 @@ completion interface."
                (project-remote-property))))
      (project
       . (lambda (root)
-          `(and (project-dir-property ,(abbreviate-file-name
-                                        (file-name-as-directory root)))
-                ,@(when-let (remote (octopus--abbreviate-remote-url root))
-                    (list `(project-remote-property ,remote)))))))))
+          `(or (project-dir-property ,(abbreviate-file-name
+                                       (file-name-as-directory root)))
+               ,@(when-let (remote (octopus--abbreviate-remote-url root))
+                   (list `(project-remote-property ,remote)))))))))
 
 ;;;; Querying
 ;; Call `org-ql-select' to get a list of markers matching a certain condition.

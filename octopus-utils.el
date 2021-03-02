@@ -62,8 +62,9 @@ the error message as NULL-MESSAGE."
 
 The remote name is specified by `octopus-default-git-remote-name'."
   (let ((default-directory (or dir default-directory)))
-    (car (octopus--get-git-config-local
-          (format "remote.%s.url" octopus-default-git-remote-name)))))
+    (car (ignore-errors
+           (octopus--get-git-config-local
+            (format "remote.%s.url" octopus-default-git-remote-name))))))
 
 (defun octopus--get-git-config-local (key)
   "Return the value of KEY from the local Git config."
