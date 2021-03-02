@@ -94,8 +94,7 @@ See `org-capture-templates' for the syntax."
      ,(octopus-entry-capture-template
        :todo "STARTED"
        :heading "%i"
-       :body "%a\n\n%?")
-     :immediate-finish t))
+       :body "%a\n\n%?")))
   "Alist of todo capture templates."
   :type '(alist :key-type symbol
                 :value-type (cons string plist)))
