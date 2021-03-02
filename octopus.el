@@ -134,18 +134,22 @@ If INTERACTIVE, it displays the subtree using
 
 Otherwise, it returns a marker."
   (interactive "P")
-  (let ((marker (--> (if all
-                         (octopus--ql-select '(default-and (any-project)))
-                       (octopus--ql-select `(project ,(octopus--project-root))
-                         :sort #'octopus--dir-element-first))
-                  (octopus--single-or it
-                    (octopus--select-org-marker
-                     "Select a subtree to display: " it
-                     :name "Org subtrees for the project")
-                    "No subtree for the project"))))
-    (if (or interactive (called-interactively-p))
-        (octopus--display-org-marker marker)
-      marker)))
+  (if (and (not all)
+           octopus-org-dwim-commands
+           (derived-mode-p 'org-mode))
+      (octopus--org-up-project-root)
+    (let ((marker (--> (if all
+                           (octopus--ql-select '(default-and (any-project)))
+                         (octopus--ql-select `(project ,(octopus--project-root))
+                           :sort #'octopus--dir-element-first))
+                    (octopus--single-or it
+                      (octopus--select-org-marker
+                       "Select a subtree to display: " it
+                       :name "Org subtrees for the project")
+                      "No subtree for the project"))))
+      (if (or interactive (called-interactively-p))
+          (octopus--display-org-marker marker)
+        marker))))
 
 ;;;; Find a local repository for the Org tree
 

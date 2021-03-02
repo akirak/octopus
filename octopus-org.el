@@ -106,5 +106,19 @@ This just calls `octopus-org-files'."
   "Return the remote repository of a project set in the property, if any."
   (org-entry-get nil octopus-remote-repo-property-name t))
 
+(defun octopus--org-up-project-root ()
+  "If inside a project subtree, go to the root."
+  (let ((initial (point))
+        identity)
+    (catch 'finish
+      (while (not (setq identity (or (org-entry-get nil octopus-dir-property-name)
+                                     (org-entry-get nil octopus-remote-repo-property-name))))
+        (unless (org-up-heading-safe)
+          (throw 'finish t))))
+    (if identity
+        (message "Go to the subtree root for project %s" identity)
+      (goto-char initial)
+      (message "Not inside a project subtree"))))
+
 (provide 'octopus-org)
 ;;; octopus-org.el ends here
