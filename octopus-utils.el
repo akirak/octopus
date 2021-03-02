@@ -132,7 +132,8 @@ The remote name is specified by `octopus-default-git-remote-name'."
 
 This is just a combination `project-root' and `project-current'
 which takes MAYBE-PROMPT as an argument, which see."
-  (project-root (project-current maybe-prompt)))
+  (when-let (current (project-current maybe-prompt))
+    (project-root current)))
 
 (provide 'octopus-utils)
 ;;; octopus-utils.el ends here
