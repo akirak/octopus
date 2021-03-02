@@ -52,11 +52,15 @@
   :group 'octopus
   :type 'function)
 
-(defcustom octopus-org-tree-show-function
-  #'org-narrow-to-subtree
-  "Function used to show the subtree at point."
+(defcustom octopus-org-show-entry-hook
+  '(org-narrow-to-subtree
+    org-show-entry)
+  "List of functions called after showing an Org entry.
+
+These functions are called without arguments at an Org
+heading by `octopus-project-org-root'."
   :group 'octopus
-  :type 'function)
+  :type 'hook)
 
 (defcustom octopus-headline-format
   #'octopus-format-headline-1
@@ -83,11 +87,10 @@ The function is called with no arguments at the marker position."
 This uses `octopus-display-org-buffer-function' and
 `octopus-org-tree-show-function'."
   (with-current-buffer (marker-buffer marker)
-    (funcall octopus-display-org-buffer-function (current-buffer))
     (widen)
     (goto-char marker)
-    (when (bound-and-true-p octopus-org-tree-show-function)
-      (funcall octopus-org-tree-show-function))))
+    (funcall octopus-display-org-buffer-function (current-buffer))
+    (run-hooks 'octopus-org-show-entry-hook)))
 
 (defsubst octopus-org-files ()
   "Return the Org files of interest.
