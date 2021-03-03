@@ -141,8 +141,12 @@ Otherwise, it returns a marker."
       (octopus--org-up-project-root)
     (let ((marker (--> (if all
                            (octopus--ql-select '(default-and (any-project)))
-                         (octopus--ql-select `(project ,(octopus--project-root))
-                           :sort #'octopus--dir-element-first))
+                         (->> (octopus--ql-select `(project ,(octopus--project-root))
+                                ;; Return elements for sorting
+                                :action 'element-with-markers
+                                :sort #'octopus--dir-element-first)
+                              (--map (or (org-element-property :org-hd-marker it)
+                                         (org-element-property :org-marker it)))))
                     (octopus--single-or it
                       (octopus--select-org-marker
                        "Select a subtree to display: " it
