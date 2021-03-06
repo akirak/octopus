@@ -61,16 +61,16 @@
    :foreign-keys run
    :quit-key "Q")
   ("Show Org"
-   (("r" octopus-project-org-root "Project subtree")
-    ("t" octopus-todo-list "Todo list"))
+   (("o" octopus-project-org-root "Project subtree")
+    ("l" octopus-todo-list "Todo list"))
    "Org project"
-   (("d" octopus-project-dir "Directory")
+   (("g" octopus-project-dir "Directory")
     ("sd" octopus-org-set-project-dir "Set dir")
     ("sr" octopus-org-set-project-remote-repo "Set remote"))
    "Org sparse trees"
-   (("or" octopus-sparse-tree "Projects")
-    ("oa" octopus-sparse-tree-with-todos "Projects with todos")
-    ("ot" octopus-sparse-tree-todos "Project todos"))
+   (("/r" octopus-sparse-tree "Projects")
+    ("/a" octopus-sparse-tree-with-todos "Projects with todos")
+    ("/t" octopus-sparse-tree-todos "Project todos"))
    "Capture"
    (("ct" octopus-capture-todo "Todo" :exit t)
     ("cc" octopus-capture-current-activity "Current task" :exit t)
