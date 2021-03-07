@@ -78,7 +78,12 @@ The function is called with no arguments at the marker position."
   (format "%s: %s %s"
           (buffer-name)
           (org-format-outline-path
-           (org-get-outline-path t t))
+           (org-get-outline-path t t)
+           ;; If there are many entries, this can slow down the
+           ;; performance, but it probably won't matter, assuming it
+           ;; is used to select an entry from 10 or less root
+           ;; subtrees.
+           (frame-width))
           (org-make-tag-string (org-get-tags))))
 
 (defun octopus--display-org-marker (marker)
