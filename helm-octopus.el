@@ -41,6 +41,19 @@
   :group 'octopus
   :group 'helm)
 
+(defun helm-octopus-show-marker (marker)
+  "Show an Org MARKER and narrow to it."
+  (switch-to-buffer (marker-buffer marker))
+  (widen)
+  (goto-char marker)
+  (org-show-entry)
+  (org-show-children)
+  ;; Show the property drawer
+  (save-excursion
+    (when (re-search-forward org-property-drawer-re (org-entry-end-position) t)
+      (org-cycle)))
+  (org-narrow-to-subtree))
+
 (cl-defun helm-octopus--org-marker-sync-source (name markers
                                                      &key action)
   "Build a sync Helm source for Org markers.
@@ -60,6 +73,7 @@ You must specify the ACTION of the Helm source."
                     (funcall octopus-headline-format))
                   marker))
           markers)
+    :persistent-action #'helm-octopus-show-marker
     :action action))
 
 ;;;###autoload
