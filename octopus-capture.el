@@ -134,8 +134,8 @@ subtree instead."
               marker
               (alist-get 'project octopus-capture-template-alist))))))
 
-(cl-defun octopus-todo-capture-location (&key root remote)
-  "Go to a location in which todo entries should be created.
+(cl-defun octopus--todo-capture-location (&key root remote)
+  "Return a marker in which todo entries should be created.
 
 Either ROOT or REMOTE should be given. The former is the root
 directory of a project, and the latter is the remote repository
@@ -161,16 +161,13 @@ This function is intended for internal use."
                       ;; Otherwise, create todos directly below the project subtree
                       (octopus--ql-select
                           `(default-and ,subtree-pred)
-                        :action #'point-marker)))
-         (parent (octopus--single-or parents
-                   (octopus--select-org-marker
-                    "Select a capture location: "
-                    parents
-                    :name (format "Project %s" identity))
-                   "Cannot find project destination")))
-    (switch-to-buffer (marker-buffer parent))
-    (widen)
-    (goto-char parent)))
+                        :action #'point-marker))))
+    (octopus--single-or parents
+      (octopus--select-org-marker
+       "Select a capture location: "
+       parents
+       :name (format "Project %s" identity))
+      "Cannot find project destination")))
 
 (defun octopus--capture-todo-entry (location-spec
                                     template
@@ -182,12 +179,10 @@ LOCATION-SPEC is a list of arguments passed to
 
 TEMPLATE and PROPS are arguments of an entry in `org-capture-templates'.
 The former is a string, and the latter is a plist."
-  (let ((org-capture-entry `("p" "Project todo"
-                             entry (function
-                                    (lambda () (octopus-todo-capture-location
-                                                ,@location-spec)))
-                             ,template ,@props)))
-    (org-capture)))
+  (if-let (parent (apply #'octopus--todo-capture-location location-spec))
+      (apply #'octopus--capture-entry-to-marker
+             parent template props)
+    (user-error "Aborted by the user")))
 
 ;;;###autoload
 (cl-defun octopus-capture-todo (&optional template
