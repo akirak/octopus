@@ -34,6 +34,11 @@
 (require 'octopus)
 (require 'octopus-org-ql)
 
+(defgroup octopus-capture nil
+  "Experimental `org-capture' integration for octopus."
+  :group 'octopus
+  :group 'org-capture)
+
 (defcustom octopus-capture-timestamp t
   "Whether to include a timestamp in capture templates.
 
@@ -44,6 +49,7 @@ tracks the creation time of each created entry.
 The function is used across this library, so it will affect most
 of the templates. If you customize all of the templates without
 using the function, this option will be ineffective."
+  :group 'octopus-capture
   :type 'boolean)
 
 (defcustom octopus-capture-finish-but-clock-in nil
@@ -56,6 +62,7 @@ clock into the captured task immediately.
 This is useful if you want to clock into a new entry from inside
 your code base but don't want to change the window
 configuration."
+  :group 'octopus-capture
   :type 'boolean)
 
 (cl-defun octopus-entry-capture-template (&key todo
