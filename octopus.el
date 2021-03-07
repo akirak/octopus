@@ -103,7 +103,7 @@ This option lets the user select a buffer from it."
 (defmacro octopus--session-values (exp)
   "Evaluate EXP in each directory in the session and remove duplicates."
   `(->> (cl-ecase octopus-session-value-source
-          (windows (walk-windows #'window-buffer))
+          (windows (-map #'window-buffer (window-list)))
           (buffers (buffer-list)))
         (--map (buffer-local-value 'default-directory it))
         (-non-nil)
