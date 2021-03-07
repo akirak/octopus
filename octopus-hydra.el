@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "26.1"))
+;; Package-Requires: ((emacs "26.1") (major-mode-hydra "0.2") (octopus "0.1"))
 ;; Keywords: convenience
 ;; URL: https://github.com/akirak/octopus.el
 
@@ -36,6 +36,7 @@
 (require 'pretty-hydra)
 
 (defun octopus-hydra--org-title ()
+  "Format the project information of the current Org entry for hydra."
   (let ((dir (octopus--org-project-dir))
         (remote (octopus--org-project-remote)))
     (if (or dir remote)
@@ -44,6 +45,7 @@
       " Not in project")))
 
 (defun octopus-hydra--project-title ()
+  "Format the project information of the directory for hydra."
   (let* ((dir (octopus--project-root))
          (remote (when dir (octopus--abbreviate-remote-url dir))))
     (if dir

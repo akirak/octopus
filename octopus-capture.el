@@ -204,7 +204,8 @@ repository with two universal arguments.
 
 As a non-interactive function, TEMPLATE is optional. It can be a
 literal string of the template body or a symbol in
-`octopus-capture-template-alist'.
+`octopus-capture-template-alist'. If the template is a string,
+you can pass the properties of the template entry as PROPS.
 
 ROOT and REMOTE are passed to `octopus-todo-capture-location'.
 You should specify on of those."

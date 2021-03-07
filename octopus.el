@@ -70,7 +70,18 @@ You can use `magit-status', `dired', etc."
   (funcall octopus-browse-dir-fn dir))
 
 (defcustom octopus-org-dwim-commands t
-  "FIXME"
+  "Whether to enable contextual operations in some commands.
+
+When this option is t, several commands in this package behave
+differently depending on the major mode. That is, if the major
+mode of the current buffer is `org-mode', it acts as if you are
+inside the project repository refererred in the current project
+Org tree.
+
+These commands include:
+
+- `octopus-project-org-root'
+- `octopus-todo-list'"
   :type 'boolean)
 
 (defcustom octopus-session-value-source 'buffers
@@ -126,8 +137,8 @@ project.
 
 If there are multiple subtrees, the user is allowed to choose one.
 
-If ALL is non-nil or C-u is given, the user can choose a subtree
-of any project, not limited to the current one.
+If ALL is non-nil or a prefix argument is given, the user can
+choose a subtree of any project, not limited to the current one.
 
 If INTERACTIVE, it displays the subtree using
 `octopus-display-org-buffer-function' and
@@ -164,7 +175,9 @@ Otherwise, it returns a marker."
 
 This function looks for an Org property about a project from the
 current Org entry and its ancestors and visit its root directory.
-It uses `octopus-browse-dir-fn' to display a directory."
+
+If INTERACTIVE, the function displays the root directory using
+`octopus-browse-dir-fn'. Otherwise, it returns the directory."
   (interactive)
   (unless (derived-mode-p 'org-mode)
     (user-error "Must be run in org-mode"))
