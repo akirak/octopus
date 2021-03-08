@@ -321,7 +321,10 @@ Items a grouped by `octopus-todo-super-groups'."
 
 ;;;###autoload
 (defun octopus-sparse-tree-todos (kwd)
-  "Show sparse trees of project roots with unfinished todos."
+  "Show sparse trees of project todos.
+
+With a prefix arg, this function displays todos with a particular
+KWD."
   (interactive (list (when current-prefix-arg
                        (completing-read "Todo keyword: "
                                         (-map #'car org-todo-kwd-alist)))))
