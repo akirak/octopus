@@ -53,8 +53,8 @@
   :type 'function)
 
 (defcustom octopus-org-show-entry-hook
-  '(org-narrow-to-subtree
-    org-show-entry)
+  '(org-show-entry
+    org-narrow-to-subtree)
   "List of functions called after showing an Org entry.
 
 These functions are called without arguments at an Org
@@ -94,8 +94,8 @@ This uses `octopus-display-org-buffer-function' and
   (with-current-buffer (marker-buffer marker)
     (widen)
     (goto-char marker)
-    (funcall octopus-display-org-buffer-function (current-buffer))
-    (run-hooks 'octopus-org-show-entry-hook)))
+    (run-hooks 'octopus-org-show-entry-hook)
+    (funcall octopus-display-org-buffer-function (current-buffer))))
 
 (defsubst octopus-org-files ()
   "Return the Org files of interest.
