@@ -163,7 +163,7 @@ Otherwise, it returns a marker."
                        "Select a subtree to display: " it
                        :name "Org subtrees for the project")
                       "No subtree for the project"))))
-      (if (or interactive (called-interactively-p))
+      (if (or interactive (called-interactively-p 'any))
           (octopus--display-org-marker marker)
         marker))))
 
@@ -180,7 +180,7 @@ If INTERACTIVE, the function displays the root directory using
 `octopus-browse-dir-fn'. Otherwise, it returns the directory."
   (interactive)
   (if-let (root (octopus--org-project-root))
-      (if (or interactive (called-interactively-p))
+      (if (or interactive (called-interactively-p 'any))
           (octopus--browse-dir root)
         root)
     (user-error "No property for the project identity")))
