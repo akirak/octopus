@@ -179,9 +179,6 @@ current Org entry and its ancestors and visit its root directory.
 If INTERACTIVE, the function displays the root directory using
 `octopus-browse-dir-fn'. Otherwise, it returns the directory."
   (interactive)
-  (unless (derived-mode-p 'org-mode)
-    (user-error "Must be run in org-mode"))
-  (assert (not (org-before-first-heading-p)))
   (if-let (root (octopus--org-project-root))
       (if (or interactive (called-interactively-p))
           (octopus--browse-dir root)
@@ -190,9 +187,17 @@ If INTERACTIVE, the function displays the root directory using
 
 (defun octopus--org-project-root ()
   "Get the root directory of the Org context, possibly with a remote."
-  (or (octopus--org-project-dir)
-      (-some->> (octopus--org-project-remote)
-        (octopus--find-repository-by-remote-url))))
+  (cond
+   ((derived-mode-p 'org-mode)
+    (assert (not (org-before-first-heading-p)))
+    (or (octopus--org-project-dir)
+        (-some->> (octopus--org-project-remote)
+          (octopus--find-repository-by-remote-url))))
+   ((derived-mode-p 'org-agenda-mode)
+    (if-let (marker (org-agenda-get-any-marker))
+        (org-with-point-at marker
+          (octopus--org-project-root))
+      (error "Cannot find an Org marker at point")))))
 
 (defun octopus--find-repository-by-remote-url (remote-repo)
   "Find a local repository matching REMOTE-REPO."
