@@ -61,7 +61,7 @@
                (octopus-hydra--org-title)
              (octopus-hydra--project-title)))
    :foreign-keys run
-   :quit-key "Q")
+   :quit-key "q")
   ("Show Org"
    (("o" octopus-project-org-root "Project subtree")
     ("l" octopus-todo-list "Todo list"))
