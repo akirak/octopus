@@ -236,6 +236,11 @@ You should specify on of those."
                          (user-error "Cannot find a template named %s" template)))))))
 
 ;; Provided as an example.
+(defcustom octopus-capture-default-headline-fn
+  #'which-function
+  "Function which provides the default Org headline."
+  :type '(choice null function))
+
 ;;;###autoload
 (defun octopus-capture-current-activity (input)
   "Create a todo entry for the current project with INPUT.
@@ -246,7 +251,9 @@ to the input. That is, %i placeholder will be replaced with the
 text.
 
 See also `octopus-capture-finish-but-clock-in'."
-  (interactive "sName of the task: ")
+  (interactive (list (read-string "Name of the task: "
+                                  (when (functionp octopus-capture-default-headline-fn)
+                                    (funcall octopus-capture-default-headline-fn)))))
   (let ((org-capture-initial input))
     (octopus-capture-todo 'current-with-input)
     (when octopus-capture-finish-but-clock-in
