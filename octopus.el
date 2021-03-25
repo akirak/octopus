@@ -209,6 +209,39 @@ If INTERACTIVE, the function displays the root directory using
       (completing-read "Local copy: " it)
       (format "No local copy of the repository %s" remote-repo))))
 
+;;;###autoload
+(defun octopus-switch-project ()
+  "Switch to a project listed in Org files."
+  (interactive)
+  ;; TODO: When a universal argument is given, sort projects by last inactive timestamp
+  (let* ((alists (->> (octopus--ql-select '(project-dir-property)
+                        :action '(cons (octopus--org-project-dir)
+                                       `((tags . ,(org-get-tags)))))
+                      (-group-by #'car)
+                      (--map (cons (car it)
+                                   (->> (-map #'cdr (cdr it))
+                                        (-flatten-n 1)
+                                        (-group-by #'car)
+                                        (-map (lambda (cell)
+                                                (cons (car cell)
+                                                      (->> (-map #'cdr (cdr cell))
+                                                           (-flatten-n 1)
+                                                           (-uniq))))))))))
+         ;; TODO: Check existence of projects
+         ;; TODO: Use frecency to sort the candidates
+         (cand (completing-read "Project root: "
+                                ;; TODO: Allow customizing the format
+                                ;; TODO: Allow including specific properties in the format
+                                (--map (propertize (format "%s  %s"
+                                                           (car it)
+                                                           (string-join
+                                                            (->> (cdr it)
+                                                                 (alist-get 'tags))
+                                                            ","))
+                                                   :root (car it))
+                                       alists))))
+    (octopus--browse-dir (get-char-property 0 :root cand))))
+
 ;;;; Set a project property
 
 ;;;###autoload
