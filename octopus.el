@@ -389,5 +389,35 @@ KWD."
            (not (todo "DONE"))
            (ancestors (any-project))))))
 
+;;;; Visualizing projects
+
+;;;###autoload
+(defun octopus-graphviz-1 ()
+  (interactive)
+  (let ((outbuf (get-buffer-create "*octopus graphviz*"))
+        (category-remote-alist
+         (cl-remove-duplicates
+          (octopus--ql-select '(project-remote-property)
+            :action '(cons (org-get-category) (octopus--org-project-remote)))
+          :test #'equal)))
+    (with-current-buffer outbuf
+      (erase-buffer)
+      (cl-flet
+          ((category-id (category) category)
+           (remote-id (remote) remote))
+        (insert ";; categories\n"
+                (mapconcat (lambda (category)
+                             (format "%s\n"
+                                     (category-id category)
+                                     category))
+                           (-uniq (-map #'car category-remote-alist))
+                           "")
+                ";; project remotes\n"
+                (mapconcat (lambda (remote)
+                             (format "%s\n"
+                                     (remote-id remote)))
+                           (-uniq (-map #'cdr category-remote-alist))
+                           ""))))))
+
 (provide 'octopus)
 ;;; octopus.el ends here
