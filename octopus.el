@@ -210,11 +210,14 @@ If INTERACTIVE, the function displays the root directory using
       (format "No local copy of the repository %s" remote-repo))))
 
 ;;;###autoload
-(defun octopus-switch-project ()
+(cl-defun octopus-switch-project (&key predicate)
   "Switch to a project listed in Org files."
   (interactive)
   ;; TODO: When a universal argument is given, sort projects by last inactive timestamp
-  (let* ((alists (->> (octopus--ql-select '(project-dir-property)
+  (let* ((alists (->> (octopus--ql-select (if predicate
+                                              `(and (project-dir-property)
+                                                    ,predicate)
+                                            '(project-dir-property))
                         :action '(cons (octopus--org-project-dir)
                                        `((tags . ,(org-get-tags)))))
                       (-group-by #'car)
@@ -241,6 +244,19 @@ If INTERACTIVE, the function displays the root directory using
                                                    :root (car it))
                                        alists))))
     (octopus--browse-dir (get-char-property 0 :root cand))))
+
+;;;###autoload
+(defun octopus-switch-project-by-org-category (category)
+  (interactive (list (cond
+                      (current-prefix-arg
+                       (completing-read "Category: "
+                                        (-uniq (octopus--ql-select '(project-dir-property)
+                                                 :action '(org-get-category)))))
+                      ((derived-mode-p 'org-mode)
+                       (org-get-category))
+                      (t
+                       (user-error "Not in org-mode")))))
+  (octopus-switch-project :predicate `(category ,category)))
 
 ;;;; Set a project property
 
