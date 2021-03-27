@@ -42,6 +42,13 @@
   :group 'octopus
   :group 'helm)
 
+(defcustom helm-octopus-project-dir-format-fn
+  #'helm-octopus-format-project-dir-struct-1
+  "Function used to format `octopus-project-dir-struct' objects in Helm.
+
+It should return a string."
+  :type 'function)
+
 (defun helm-octopus-show-marker (marker)
   "Show an Org MARKER and narrow to it."
   (switch-to-buffer (marker-buffer marker))
@@ -100,17 +107,16 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
         :sources (helm-build-sync-source "Projects"
                    :multiline t
                    :candidates
-                   ;; TODO: Allow customizing the format
                    ;; TODO: Allow including specific properties in the format
-                   (--map (cons (helm-octopus--format-project-dir-struct it)
-                                (octopus-project-dir-struct-dir it))
+                   (--map (cons (funcall helm-octopus-project-dir-format-fn it)
+                                it)
                           candidates)
                    :action
                    (list (cons "Browse"
                                (-compose #'octopus--browse-dir
                                          #'octopus-project-dir-struct-dir))))))
 
-(defun helm-octopus--format-project-dir-struct (x)
+(defun helm-octopus-format-project-dir-struct-1 (x)
   "Format `octopus-project-dir-struct' instance for Helm."
   (let ((remote (octopus-project-dir-struct-remote x))
         (dir (octopus-project-dir-struct-dir x))
