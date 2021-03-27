@@ -51,6 +51,15 @@
 It should return a string."
   :type 'function)
 
+(defcustom helm-octopus-extra-dir-fields
+  '(helm-octopus-format-dir-org-tags)
+  "Extra fields in `helm-octopus-format-project-dir-struct-1'.
+
+This value must be a list of function that takes
+`octopus-project-dir-struct' as the argument and returns a string
+or nil."
+  :type '(repeat function))
+
 (defcustom helm-octopus-excluded-org-tags
   '("ORDERED" "noexport")
   "List of tags that are not displayed in Helm."
@@ -87,7 +96,7 @@ It should return a string."
   "Face for Org tags."
   :group 'helm-octopus)
 
-;;;; Functions
+;;;; Org markers
 
 (defun helm-octopus-show-marker (marker)
   "Show an Org MARKER and narrow to it."
@@ -138,6 +147,8 @@ NAME will be the name of the Helm sync source."
         (helm-octopus--org-marker-sync-source name
           markers :action #'identity)))
 
+;;;; Project directories
+
 ;;;###autoload
 (defun helm-octopus-switch-project (candidates)
   "Switch to a project directory.
@@ -159,7 +170,8 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
   "Format `octopus-project-dir-struct' instance for Helm."
   (let ((remote (octopus-project-dir-struct-remote x))
         (dir (octopus-project-dir-struct-dir x))
-        (time (octopus-project-dir-struct-last-ts-unix x)))
+        (time (octopus-project-dir-struct-last-ts-unix x))
+        (extras (-non-nil (--map (funcall it x) helm-octopus-extra-dir-fields))))
     (->> (list (when remote
                  (propertize remote 'face 'helm-octopus-remote-face))
                (when (and remote dir)
@@ -172,13 +184,22 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
                (when time
                  (propertize (octopus--format-time time)
                              'face 'helm-octopus-time-face))
-               "\n  "
-               (propertize (string-join (--filter (not (member it helm-octopus-excluded-org-tags))
-                                                  (octopus-project-dir-struct-org-tags x))
-                                        " ")
-                           'face 'helm-octopus-tag-face))
+               (when extras
+                 "\n  ")
+               (string-join extras (propertize " | " 'face 'helm-octopus-delimiter-face)))
          (-non-nil)
          (string-join))))
+
+;;;;; Format particular fields
+
+(defun helm-octopus-format-dir-org-tags (x)
+  "Format Org tags of X.
+
+X must be a `octopus-project-dir-struct' object."
+  (when-let (tags (--filter (not (member it helm-octopus-excluded-org-tags))
+                            (octopus-project-dir-struct-org-tags x)))
+    (propertize (string-join tags " ")
+                'face 'helm-octopus-tag-face)))
 
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here
