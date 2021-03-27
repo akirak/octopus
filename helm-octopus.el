@@ -150,6 +150,37 @@ NAME will be the name of the Helm sync source."
 
 ;;;; Project directories
 
+(defun helm-octopus-browse-dir (x)
+  "Helm action for browsing a project directory.
+
+X must be an instance of `octopus-project-dir-struct'."
+  (octopus--browse-dir (octopus-project-dir-struct-dir x)))
+
+(defun helm-octopus-display-marker (x)
+  "Helm action for displaying an Org marker.
+
+X must be an instance of `octopus-project-dir-struct'."
+  (let ((markers (octopus-project-dir-struct-markers x)))
+    (octopus--display-org-marker
+     (octopus--single-or markers
+       (octopus--select-org-marker
+        "Select a subtree to display: " markers
+        :name "Org subtrees for the project")))))
+
+(defcustom helm-octopus-directory-persistent-action
+  #'helm-octopus-display-marker
+  "Persistent action of `helm-octopus-switch-project'."
+  :type 'function)
+
+(defcustom helm-octopus-directory-actions
+  (list (cons "Browse"
+              (-compose #'octopus--browse-dir
+                        #'octopus-project-dir-struct-dir))
+        (cons "Navigate to the Org marker"
+              #'helm-octopus-display-marker))
+  "List of actions to be available in `helm-octopus-switch-project'."
+  :type 'alist)
+
 ;;;###autoload
 (defun helm-octopus-switch-project (candidates)
   "Switch to a project directory.
@@ -162,10 +193,8 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
                    (--map (cons (funcall helm-octopus-project-dir-format-fn it)
                                 it)
                           candidates)
-                   :action
-                   (list (cons "Browse"
-                               (-compose #'octopus--browse-dir
-                                         #'octopus-project-dir-struct-dir))))))
+                   :persistent-action helm-octopus-directory-persistent-action
+                   :action helm-octopus-directory-actions)))
 
 (defun helm-octopus-format-project-dir-struct-1 (x)
   "Format a directory for Helm.
