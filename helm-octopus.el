@@ -42,12 +42,47 @@
   :group 'octopus
   :group 'helm)
 
+;;;; Custom variables
+
 (defcustom helm-octopus-project-dir-format-fn
   #'helm-octopus-format-project-dir-struct-1
   "Function used to format `octopus-project-dir-struct' objects in Helm.
 
 It should return a string."
   :type 'function)
+
+;;;; Faces
+(defface helm-octopus-remote-face
+  '((t (:inherit font-lock-constant-face)))
+  "Face for remote repository URLs."
+  :group 'helm-octopus)
+
+(defface helm-octopus-delimiter-face
+  '((t (:inherit font-lock-type-face)))
+  "Face for delimiters."
+  :group 'helm-octopus)
+
+(defface helm-octopus-directory-face
+  '((t (:inherit font-lock-string-face)))
+  "Face for existing directory paths."
+  :group 'helm-octopus)
+
+(defface helm-octopus-nonexistent-directory-face
+  '((t (:inherit font-lock-comment-face)))
+  "Face for non-existent directory paths."
+  :group 'helm-octopus)
+
+(defface helm-octopus-time-face
+  '((t (:inherit font-lock-doc-face)))
+  "Face for time strings."
+  :group 'helm-octopus)
+
+(defface helm-octopus-tag-face
+  '((t (:inherit org-tag)))
+  "Face for Org tags."
+  :group 'helm-octopus)
+
+;;;; Functions
 
 (defun helm-octopus-show-marker (marker)
   "Show an Org MARKER and narrow to it."
@@ -107,7 +142,6 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
         :sources (helm-build-sync-source "Projects"
                    :multiline t
                    :candidates
-                   ;; TODO: Allow including specific properties in the format
                    (--map (cons (funcall helm-octopus-project-dir-format-fn it)
                                 it)
                           candidates)
@@ -121,25 +155,23 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
   (let ((remote (octopus-project-dir-struct-remote x))
         (dir (octopus-project-dir-struct-dir x))
         (time (octopus-project-dir-struct-last-ts-unix x)))
-    (format "%s %s\n  %s"
-            (concat (if remote
-                        (propertize remote
-                                    'face font-lock-constant-face)
-                      "")
-                    (if (and remote dir)
-                        " / "
-                      "")
-                    (if dir
-                        (propertize dir
-                                    'face
-                                    (if (octopus-project-dir-struct-exists x)
-                                        'font-lock-string-face
-                                      'font-lock-comment-face))
-                      ""))
-            (if time
-                (octopus--format-time time)
-              "")
-            (string-join (octopus-project-dir-struct-org-tags x) ", "))))
+    (->> (list (when remote
+                 (propertize remote 'face 'helm-octopus-remote-face))
+               (when (and remote dir)
+                 (propertize " | " 'face 'helm-octopus-delimiter-face))
+               (when dir
+                 (propertize dir 'face (if (octopus-project-dir-struct-exists x)
+                                           'helm-octopus-directory-face
+                                         'helm-octopus-nonexistent-directory-face)))
+               "  "
+               (when time
+                 (propertize (octopus--format-time time)
+                             'face 'helm-octopus-time-face))
+               "\n  "
+               (propertize (string-join (octopus-project-dir-struct-org-tags x) " ")
+                           'face 'helm-octopus-tag-face))
+         (-non-nil)
+         (string-join))))
 
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here
