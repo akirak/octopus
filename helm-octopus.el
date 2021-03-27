@@ -201,5 +201,18 @@ X must be a `octopus-project-dir-struct' object."
     (propertize (string-join tags " ")
                 'face 'helm-octopus-tag-face)))
 
+(defun helm-octopus-format-dir-org-property (property x)
+  "Extract an Org property.
+
+PROPERTY is a string.
+
+X must be a `octopus-project-dir-struct' object.
+
+You can use `-partial' to build a function that extracts a
+particular property, e.g.
+
+  (-partial #'helm-octopus-format-dir-org-property \"category\")"
+  (cdr (assoc property (octopus-project-dir-struct-properties x))))
+
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here

@@ -213,12 +213,16 @@ If INTERACTIVE, the function displays the root directory using
 
 (defstruct octopus-project-dir-struct
   "Data type for representing projects with meta information."
-  dir org-tags exists remote frecency-score markers last-ts-unix)
+  dir org-tags exists remote frecency-score markers last-ts-unix properties)
 
 (defcustom octopus-project-dir-group 'dir
   "Field used to group project directories."
   :type '(choice (const dir)
                  (const remote)))
+
+(defcustom octopus-project-org-properties nil
+  "List of properties to be included scanned in `octopus-switch-project'."
+  :type '(repeat string))
 
 (cl-defun octopus--project-dirs (&key predicate)
   "Return a list of `octopus-project-dir-struct' objects from the environment.
@@ -231,6 +235,9 @@ PREDICATE is the same as in `octopus-switch-project'."
          :action '(append `((dir . ,(octopus--org-project-dir))
                             (org-tags . ,(org-get-tags))
                             (remote . ,(octopus--org-project-remote))
+                            (properties . ,(--map (cons it
+                                                        (org-entry-get nil it t))
+                                                  octopus-project-org-properties))
                             (marker . ,(point-marker)))
                           (octopus--subtree-timestamp-info)))
        (-group-by (lambda (x)
@@ -251,6 +258,7 @@ PREDICATE is the same as in `octopus-switch-project'."
                      (dir (car (-non-nil (alist-get 'dir alist))))
                      (org-tags (alist-get 'org-tags alist))
                      (markers (alist-get 'marker alist))
+                     (properties (alist-get 'properties alist))
                      (timestamps (->> (alist-get 'last-ts alist)
                                       (-non-nil)
                                       (-map #'ts-unix)))
@@ -268,6 +276,7 @@ PREDICATE is the same as in `octopus-switch-project'."
                  :exists (and dir (file-directory-p dir))
                  :markers markers
                  :last-ts-unix last-ts
+                 :properties properties
                  :remote remote)))
        (-sort (-on #'> #'octopus-project-dir-struct-frecency-score))))
 
