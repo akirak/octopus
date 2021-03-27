@@ -47,7 +47,8 @@
 ;;;; Completing-read like interface for Org markers
 
 (defcustom octopus-org-marker-select-interface
-  (if (require 'helm nil t)
+  (if (and (require 'helm nil t)
+           (fboundp 'helm-octopus-org-marker))
       'helm
     #'completing-read)
   "Completion interface used to select Org markers.

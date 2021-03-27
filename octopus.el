@@ -209,41 +209,67 @@ If INTERACTIVE, the function displays the root directory using
       (completing-read "Local copy: " it)
       (format "No local copy of the repository %s" remote-repo))))
 
+;;;; Switching to a project
+
+(defstruct octopus-project-dir-struct
+  "Data type for representing projects with meta information."
+  dir org-tags exists remote)
+
+(cl-defun octopus--project-dirs (&key predicate)
+  "Return a list of `octopus-project-dir-struct' objects from the environment.
+
+PREDICATE is the same as in `octopus-switch-project'."
+  (->> (octopus--ql-select (if predicate
+                               `(and (project-dir-property)
+                                     ,predicate)
+                             '(project-dir-property))
+         :action '(cons (octopus--org-project-dir)
+                        `((org-tags . ,(org-get-tags))
+                          (remote . ,(octopus--org-project-remote)))))
+       (-group-by #'car)
+       (--map (let ((dir (car it))
+                    (alist (->> (-map #'cdr (cdr it))
+                                (-flatten-n 1)
+                                (-group-by #'car)
+                                (-map (lambda (cell)
+                                        (cons (car cell)
+                                              (->> (-map #'cdr (cdr cell))
+                                                   (-flatten-n 1)
+                                                   (-uniq))))))))
+                (make-octopus-project-dir-struct
+                 :dir dir
+                 :org-tags (alist-get 'org-tags alist)
+                 :exists (file-directory-p dir)
+                 :remote (car (-non-nil (alist-get 'org-tags alist))))))))
+
+(defcustom octopus-switch-project-select-interface
+  (if (and (require 'helm nil t)
+           (fboundp 'helm-octopus-switch-project))
+      'helm
+    #'completing-read)
+  "Selection interface used in `octopus-switch-project'."
+  :type '(choice (const :tag "Helm" helm)
+                 function))
+
 ;;;###autoload
 (cl-defun octopus-switch-project (&key predicate)
-  "Switch to a project listed in Org files."
+  "Switch to a project listed in Org files.
+
+PREDICATE is an extra filter passed to `org-ql'."
   (interactive)
   ;; TODO: When a universal argument is given, sort projects by last inactive timestamp
-  (let* ((alists (->> (octopus--ql-select (if predicate
-                                              `(and (project-dir-property)
-                                                    ,predicate)
-                                            '(project-dir-property))
-                        :action '(cons (octopus--org-project-dir)
-                                       `((tags . ,(org-get-tags)))))
-                      (-group-by #'car)
-                      (--map (cons (car it)
-                                   (->> (-map #'cdr (cdr it))
-                                        (-flatten-n 1)
-                                        (-group-by #'car)
-                                        (-map (lambda (cell)
-                                                (cons (car cell)
-                                                      (->> (-map #'cdr (cdr cell))
-                                                           (-flatten-n 1)
-                                                           (-uniq))))))))))
-         ;; TODO: Check existence of projects
-         ;; TODO: Use frecency to sort the candidates
-         (cand (completing-read "Project root: "
-                                ;; TODO: Allow customizing the format
-                                ;; TODO: Allow including specific properties in the format
-                                (--map (propertize (format "%s  %s"
-                                                           (car it)
-                                                           (string-join
-                                                            (->> (cdr it)
-                                                                 (alist-get 'tags))
-                                                            ","))
-                                                   :root (car it))
-                                       alists))))
-    (octopus--browse-dir (get-char-property 0 :root cand))))
+  (let ((candidates (octopus--project-dirs)))
+    (pcase octopus-switch-project-select-interface
+      (`helm
+       (helm-octopus-switch-project candidates))
+      ((pred functionp)
+       (octopus--browse-dir
+        (funcall octopus-switch-project-select-interface
+                 "Project root: "
+                 candidates)))
+      (_
+       (user-error "Invalid value for octopus-switch-project-select-interface: %s"
+                   octopus-switch-project-select-interface)))))
 
 ;;;###autoload
 (defun octopus-switch-project-by-org-category (category)

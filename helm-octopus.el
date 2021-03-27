@@ -88,7 +88,31 @@ NAME will be the name of the Helm sync source."
   (helm :prompt prompt
         :sources
         (helm-octopus--org-marker-sync-source name
-          markers :action #'identity)))
+                                              markers :action #'identity)))
+
+;;;###autoload
+(defun helm-octopus-switch-project (candidates)
+  "Switch to a project directory.
+
+CANDIDATES must be a list of `octopus-project-dir-struct' instances."
+  (helm :project "Switch to a project: "
+        :sources (helm-build-sync-source "Projects"
+                   :multiline t
+                   :candidates
+                   ;; TODO: Allow customizing the format
+                   ;; TODO: Allow including specific properties in the format
+                   (--map (cons (format "%s\n  %s"
+                                        (propertize (octopus-project-dir-struct-dir it)
+                                                    'face
+                                                    (if (octopus-project-dir-struct-exists it)
+                                                        'font-lock-string-face
+                                                      'font-lock-comment-face))
+                                        (string-join (octopus-project-dir-struct-org-tags it) ", "))
+                                (octopus-project-dir-struct-dir it))
+                          candidates)
+                   :action
+                   (list (cons "Browse"
+                               #'octopus--browse-dir)))))
 
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here
