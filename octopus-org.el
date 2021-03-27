@@ -31,6 +31,8 @@
 ;;; Code:
 
 (require 'org)
+(require 'org-element)
+(require 'ts)
 
 (require 'octopus-utils)
 

@@ -33,6 +33,7 @@
 
 (require 'octopus-org)
 (require 'octopus-utils)
+(require 'octopus)
 (require 'org)
 (require 'helm)
 (require 'dash)
@@ -167,7 +168,9 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
                                          #'octopus-project-dir-struct-dir))))))
 
 (defun helm-octopus-format-project-dir-struct-1 (x)
-  "Format `octopus-project-dir-struct' instance for Helm."
+  "Format a directory for Helm.
+
+X must be an instance of `octopus-project-dir-struct'."
   (let ((remote (octopus-project-dir-struct-remote x))
         (dir (octopus-project-dir-struct-dir x))
         (time (octopus-project-dir-struct-last-ts-unix x))
