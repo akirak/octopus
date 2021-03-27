@@ -273,6 +273,9 @@ PREDICATE is an extra filter passed to `org-ql'."
 
 ;;;###autoload
 (defun octopus-switch-project-by-org-category (category)
+  "Switch to a project that belongs to a particular CATEGORY.
+
+This command is experimental."
   (interactive (list (cond
                       (current-prefix-arg
                        (completing-read "Category: "
