@@ -32,6 +32,7 @@
 ;;; Code:
 
 (require 'octopus-org)
+(require 'octopus-utils)
 (require 'org)
 (require 'helm)
 (require 'dash)
@@ -88,7 +89,7 @@ NAME will be the name of the Helm sync source."
   (helm :prompt prompt
         :sources
         (helm-octopus--org-marker-sync-source name
-                                              markers :action #'identity)))
+          markers :action #'identity)))
 
 ;;;###autoload
 (defun helm-octopus-switch-project (candidates)
@@ -101,18 +102,38 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
                    :candidates
                    ;; TODO: Allow customizing the format
                    ;; TODO: Allow including specific properties in the format
-                   (--map (cons (format "%s\n  %s"
-                                        (propertize (octopus-project-dir-struct-dir it)
-                                                    'face
-                                                    (if (octopus-project-dir-struct-exists it)
-                                                        'font-lock-string-face
-                                                      'font-lock-comment-face))
-                                        (string-join (octopus-project-dir-struct-org-tags it) ", "))
+                   (--map (cons (helm-octopus--format-project-dir-struct it)
                                 (octopus-project-dir-struct-dir it))
                           candidates)
                    :action
                    (list (cons "Browse"
-                               #'octopus--browse-dir)))))
+                               (-compose #'octopus--browse-dir
+                                         #'octopus-project-dir-struct-dir))))))
+
+(defun helm-octopus--format-project-dir-struct (x)
+  "Format `octopus-project-dir-struct' instance for Helm."
+  (let ((remote (octopus-project-dir-struct-remote x))
+        (dir (octopus-project-dir-struct-dir x))
+        (time (octopus-project-dir-struct-last-ts-unix x)))
+    (format "%s %s\n  %s"
+            (concat (if remote
+                        (propertize remote
+                                    'face font-lock-constant-face)
+                      "")
+                    (if (and remote dir)
+                        " / "
+                      "")
+                    (if dir
+                        (propertize dir
+                                    'face
+                                    (if (octopus-project-dir-struct-exists x)
+                                        'font-lock-string-face
+                                      'font-lock-comment-face))
+                      ""))
+            (if time
+                (octopus--format-time time)
+              "")
+            (string-join (octopus-project-dir-struct-org-tags x) ", "))))
 
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here

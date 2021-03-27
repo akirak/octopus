@@ -213,38 +213,57 @@ If INTERACTIVE, the function displays the root directory using
 
 (defstruct octopus-project-dir-struct
   "Data type for representing projects with meta information."
-  dir org-tags exists remote)
+  dir org-tags exists remote frecency-score markers last-ts-unix)
 
 (cl-defun octopus--project-dirs (&key predicate)
   "Return a list of `octopus-project-dir-struct' objects from the environment.
 
 PREDICATE is the same as in `octopus-switch-project'."
   (->> (octopus--ql-select (if predicate
-                               `(and (project-dir-property)
+                               `(and (any-project)
                                      ,predicate)
-                             '(project-dir-property))
-         :action '(cons (octopus--org-project-dir)
-                        `((org-tags . ,(org-get-tags))
-                          (remote . ,(octopus--org-project-remote)))))
+                             '(any-project))
+         :action '(cons (or (octopus--org-project-remote)
+                            (octopus--org-project-dir))
+                        `((dir . ,(octopus--org-project-dir))
+                          (org-tags . ,(org-get-tags))
+                          (remote . ,(octopus--org-project-remote))
+                          (marker . ,(point-marker))
+                          ,@(octopus--subtree-timestamp-info))))
        (-group-by #'car)
-       (--map (let ((dir (car it))
-                    (alist (->> (-map #'cdr (cdr it))
-                                (-flatten-n 1)
-                                (-group-by #'car)
-                                (-map (lambda (cell)
-                                        (cons (car cell)
-                                              (->> (-map #'cdr (cdr cell))
-                                                   (-flatten-n 1)
-                                                   (-uniq))))))))
+       (--map (let* ((alist (->> (-map #'cdr (cdr it))
+                                 (-flatten-n 1)
+                                 (-group-by #'car)
+                                 (-map (lambda (cell)
+                                         (cons (car cell)
+                                               (->> (-map #'cdr (cdr cell))
+                                                    (-flatten-n 1)
+                                                    (-uniq)))))))
+                     (remote (car (-non-nil (alist-get 'remote alist))))
+                     (dir (car (-non-nil (alist-get 'dir alist))))
+                     (org-tags (alist-get 'org-tags alist))
+                     (markers (alist-get 'marker alist))
+                     (last-ts (->> (alist-get 'last-ts alist)
+                                   (-non-nil)
+                                   (-map #'ts-unix)
+                                   (-max)))
+                     (ts-count (-sum (alist-get 'ts-count alist))))
                 (make-octopus-project-dir-struct
+                 :frecency-score
+                 (if last-ts
+                     (/ (* ts-count (octopus--frecency-timestamp-score last-ts))
+                        (min ts-count 10))
+                   0)
                  :dir dir
-                 :org-tags (alist-get 'org-tags alist)
-                 :exists (file-directory-p dir)
-                 :remote (car (-non-nil (alist-get 'org-tags alist))))))))
+                 :org-tags org-tags
+                 :exists (and dir (file-directory-p dir))
+                 :markers markers
+                 :last-ts-unix last-ts
+                 :remote remote)))
+       (-sort (-on #'> #'octopus-project-dir-struct-frecency-score))))
 
 (defcustom octopus-switch-project-select-interface
-  (if (and (require 'helm nil t)
-           (fboundp 'helm-octopus-switch-project))
+  (if (require 'helm nil t)
       'helm
     #'completing-read)
   "Selection interface used in `octopus-switch-project'."
@@ -266,7 +285,9 @@ PREDICATE is an extra filter passed to `org-ql'."
        (octopus--browse-dir
         (funcall octopus-switch-project-select-interface
                  "Project root: "
-                 candidates)))
+                 (--map (or (octopus-project-dir-struct-dir it)
+                            (octopus-project-dir-struct-remote it))
+                        candidates))))
       (_
        (user-error "Invalid value for octopus-switch-project-select-interface: %s"
                    octopus-switch-project-select-interface)))))
