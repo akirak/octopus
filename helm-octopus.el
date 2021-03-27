@@ -51,6 +51,11 @@
 It should return a string."
   :type 'function)
 
+(defcustom helm-octopus-excluded-org-tags
+  '("ORDERED" "noexport")
+  "List of tags that are not displayed in Helm."
+  :type '(repeat string))
+
 ;;;; Faces
 (defface helm-octopus-remote-face
   '((t (:inherit font-lock-constant-face)))
@@ -168,7 +173,9 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
                  (propertize (octopus--format-time time)
                              'face 'helm-octopus-time-face))
                "\n  "
-               (propertize (string-join (octopus-project-dir-struct-org-tags x) " ")
+               (propertize (string-join (--filter (not (member it helm-octopus-excluded-org-tags))
+                                                  (octopus-project-dir-struct-org-tags x))
+                                        " ")
                            'face 'helm-octopus-tag-face))
          (-non-nil)
          (string-join))))
