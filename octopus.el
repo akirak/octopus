@@ -215,6 +215,11 @@ If INTERACTIVE, the function displays the root directory using
   "Data type for representing projects with meta information."
   dir org-tags exists remote frecency-score markers last-ts-unix)
 
+(defcustom octopus-project-dir-group 'dir
+  "Field used to group project directories."
+  :type '(choice (const dir)
+                 (const remote)))
+
 (cl-defun octopus--project-dirs (&key predicate)
   "Return a list of `octopus-project-dir-struct' objects from the environment.
 
@@ -223,15 +228,18 @@ PREDICATE is the same as in `octopus-switch-project'."
                                `(and (any-project)
                                      ,predicate)
                              '(any-project))
-         :action '(cons (or (octopus--org-project-remote)
-                            (octopus--org-project-dir))
-                        `((dir . ,(octopus--org-project-dir))
-                          (org-tags . ,(org-get-tags))
-                          (remote . ,(octopus--org-project-remote))
-                          (marker . ,(point-marker))
-                          ,@(octopus--subtree-timestamp-info))))
-       (-group-by #'car)
-       (--map (let* ((alist (->> (-map #'cdr (cdr it))
+         :action '(append `((dir . ,(octopus--org-project-dir))
+                            (org-tags . ,(org-get-tags))
+                            (remote . ,(octopus--org-project-remote))
+                            (marker . ,(point-marker)))
+                          (octopus--subtree-timestamp-info)))
+       (-group-by (lambda (x)
+                    (cl-ecase octopus-project-dir-group
+                      (dir (or (alist-get 'dir x)
+                               (alist-get 'remote x)))
+                      (remote (or (alist-get 'remote x)
+                                  (alist-get 'dir x))))))
+       (--map (let* ((alist (->> (cdr it)
                                  (-flatten-n 1)
                                  (-group-by #'car)
                                  (-map (lambda (cell)
@@ -243,10 +251,11 @@ PREDICATE is the same as in `octopus-switch-project'."
                      (dir (car (-non-nil (alist-get 'dir alist))))
                      (org-tags (alist-get 'org-tags alist))
                      (markers (alist-get 'marker alist))
-                     (last-ts (->> (alist-get 'last-ts alist)
-                                   (-non-nil)
-                                   (-map #'ts-unix)
-                                   (-max)))
+                     (timestamps (->> (alist-get 'last-ts alist)
+                                      (-non-nil)
+                                      (-map #'ts-unix)))
+                     (last-ts (when timestamps
+                                (-max timestamps)))
                      (ts-count (-sum (alist-get 'ts-count alist))))
                 (make-octopus-project-dir-struct
                  :frecency-score
