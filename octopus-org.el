@@ -36,10 +36,10 @@
 
 (require 'octopus-utils)
 
-(defconst octopus-dir-property-name "PROJECT_DIR"
+(defconst octopus-dir-property-name "OCTOPUS_DIR"
   "Org property that locates the root directory of a project.")
 
-(defconst octopus-remote-repo-property-name "PROJECT_REMOTE_REPO"
+(defconst octopus-remote-repo-property-name "OCTOPUS_REMOTE_REPO"
   "Org property that locates the remote repository of a project.")
 
 (defcustom octopus-org-files #'org-agenda-files

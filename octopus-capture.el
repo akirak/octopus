@@ -158,7 +158,7 @@ This function is intended for internal use."
                          `(project ,root)))
          (parents (or (octopus--ql-select
                           `(default-and (ancestors ,subtree-pred)
-                             (property "PROJECT_CAPTURE_LOCATION"))
+                             (property "OCTOPUS_CAPTURE_LOCATION"))
                         :action #'point-marker)
                       (octopus--ql-select
                           `(default-and (ancestors ,subtree-pred)
