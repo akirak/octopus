@@ -213,38 +213,75 @@ If INTERACTIVE, the function displays the root directory using
 
 (defstruct octopus-project-dir-struct
   "Data type for representing projects with meta information."
-  dir org-tags exists remote)
+  dir org-tags exists remote frecency-score markers last-ts-unix properties)
+
+(defcustom octopus-project-dir-group 'dir
+  "Field used to group project directories."
+  :type '(choice (const dir)
+                 (const remote)))
+
+(defcustom octopus-project-org-properties nil
+  "List of properties to be included scanned in `octopus-switch-project'."
+  :type '(repeat string))
 
 (cl-defun octopus--project-dirs (&key predicate)
   "Return a list of `octopus-project-dir-struct' objects from the environment.
 
 PREDICATE is the same as in `octopus-switch-project'."
   (->> (octopus--ql-select (if predicate
-                               `(and (project-dir-property)
+                               `(and (any-project)
                                      ,predicate)
-                             '(project-dir-property))
-         :action '(cons (octopus--org-project-dir)
-                        `((org-tags . ,(org-get-tags))
-                          (remote . ,(octopus--org-project-remote)))))
-       (-group-by #'car)
-       (--map (let ((dir (car it))
-                    (alist (->> (-map #'cdr (cdr it))
-                                (-flatten-n 1)
-                                (-group-by #'car)
-                                (-map (lambda (cell)
-                                        (cons (car cell)
-                                              (->> (-map #'cdr (cdr cell))
-                                                   (-flatten-n 1)
-                                                   (-uniq))))))))
+                             '(any-project))
+         :action '(append `((dir . ,(octopus--org-project-dir))
+                            (org-tags . ,(org-get-tags))
+                            (remote . ,(octopus--org-project-remote))
+                            (properties . ,(--map (cons it
+                                                        (org-entry-get nil it t))
+                                                  octopus-project-org-properties))
+                            (marker . ,(point-marker)))
+                          (octopus--subtree-timestamp-info)))
+       (-group-by (lambda (x)
+                    (cl-ecase octopus-project-dir-group
+                      (dir (or (alist-get 'dir x)
+                               (alist-get 'remote x)))
+                      (remote (or (alist-get 'remote x)
+                                  (alist-get 'dir x))))))
+       (--map (let* ((alist (->> (cdr it)
+                                 (-flatten-n 1)
+                                 (-group-by #'car)
+                                 (-map (lambda (cell)
+                                         (cons (car cell)
+                                               (->> (-map #'cdr (cdr cell))
+                                                    (-flatten-n 1)
+                                                    (-uniq)))))))
+                     (remote (car (-non-nil (alist-get 'remote alist))))
+                     (dir (car (-non-nil (alist-get 'dir alist))))
+                     (org-tags (alist-get 'org-tags alist))
+                     (markers (alist-get 'marker alist))
+                     (properties (alist-get 'properties alist))
+                     (timestamps (->> (alist-get 'last-ts alist)
+                                      (-non-nil)
+                                      (-map #'ts-unix)))
+                     (last-ts (when timestamps
+                                (-max timestamps)))
+                     (ts-count (-sum (alist-get 'ts-count alist))))
                 (make-octopus-project-dir-struct
+                 :frecency-score
+                 (if last-ts
+                     (/ (* ts-count (octopus--frecency-timestamp-score last-ts))
+                        (min ts-count 10))
+                   0)
                  :dir dir
-                 :org-tags (alist-get 'org-tags alist)
-                 :exists (file-directory-p dir)
-                 :remote (car (-non-nil (alist-get 'org-tags alist))))))))
+                 :org-tags org-tags
+                 :exists (and dir (file-directory-p dir))
+                 :markers markers
+                 :last-ts-unix last-ts
+                 :properties properties
+                 :remote remote)))
+       (-sort (-on #'> #'octopus-project-dir-struct-frecency-score))))
 
 (defcustom octopus-switch-project-select-interface
-  (if (and (require 'helm nil t)
-           (fboundp 'helm-octopus-switch-project))
+  (if (require 'helm nil t)
       'helm
     #'completing-read)
   "Selection interface used in `octopus-switch-project'."
@@ -266,7 +303,9 @@ PREDICATE is an extra filter passed to `org-ql'."
        (octopus--browse-dir
         (funcall octopus-switch-project-select-interface
                  "Project root: "
-                 candidates)))
+                 (--map (or (octopus-project-dir-struct-dir it)
+                            (octopus-project-dir-struct-remote it))
+                        candidates))))
       (_
        (user-error "Invalid value for octopus-switch-project-select-interface: %s"
                    octopus-switch-project-select-interface)))))

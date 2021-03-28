@@ -32,6 +32,8 @@
 ;;; Code:
 
 (require 'octopus-org)
+(require 'octopus-utils)
+(require 'octopus)
 (require 'org)
 (require 'helm)
 (require 'dash)
@@ -40,6 +42,62 @@
   "Helm interface to octopus."
   :group 'octopus
   :group 'helm)
+
+;;;; Custom variables
+
+(defcustom helm-octopus-project-dir-format-fn
+  #'helm-octopus-format-project-dir-struct-1
+  "Function used to format `octopus-project-dir-struct' objects in Helm.
+
+It should return a string."
+  :type 'function)
+
+(defcustom helm-octopus-extra-dir-fields
+  '(helm-octopus-format-dir-org-tags)
+  "Extra fields in `helm-octopus-format-project-dir-struct-1'.
+
+This value must be a list of function that takes
+`octopus-project-dir-struct' as the argument and returns a string
+or nil."
+  :type '(repeat function))
+
+(defcustom helm-octopus-excluded-org-tags
+  '("ORDERED" "noexport")
+  "List of tags that are not displayed in Helm."
+  :type '(repeat string))
+
+;;;; Faces
+(defface helm-octopus-remote-face
+  '((t (:inherit font-lock-constant-face)))
+  "Face for remote repository URLs."
+  :group 'helm-octopus)
+
+(defface helm-octopus-delimiter-face
+  '((t (:inherit font-lock-type-face)))
+  "Face for delimiters."
+  :group 'helm-octopus)
+
+(defface helm-octopus-directory-face
+  '((t (:inherit font-lock-string-face)))
+  "Face for existing directory paths."
+  :group 'helm-octopus)
+
+(defface helm-octopus-nonexistent-directory-face
+  '((t (:inherit font-lock-comment-face)))
+  "Face for non-existent directory paths."
+  :group 'helm-octopus)
+
+(defface helm-octopus-time-face
+  '((t (:inherit font-lock-doc-face)))
+  "Face for time strings."
+  :group 'helm-octopus)
+
+(defface helm-octopus-tag-face
+  '((t (:inherit org-tag)))
+  "Face for Org tags."
+  :group 'helm-octopus)
+
+;;;; Org markers
 
 (defun helm-octopus-show-marker (marker)
   "Show an Org MARKER and narrow to it."
@@ -88,7 +146,40 @@ NAME will be the name of the Helm sync source."
   (helm :prompt prompt
         :sources
         (helm-octopus--org-marker-sync-source name
-                                              markers :action #'identity)))
+          markers :action #'identity)))
+
+;;;; Project directories
+
+(defun helm-octopus-browse-dir (x)
+  "Helm action for browsing a project directory.
+
+X must be an instance of `octopus-project-dir-struct'."
+  (octopus--browse-dir (octopus-project-dir-struct-dir x)))
+
+(defun helm-octopus-display-marker (x)
+  "Helm action for displaying an Org marker.
+
+X must be an instance of `octopus-project-dir-struct'."
+  (let ((markers (octopus-project-dir-struct-markers x)))
+    (octopus--display-org-marker
+     (octopus--single-or markers
+       (octopus--select-org-marker
+        "Select a subtree to display: " markers
+        :name "Org subtrees for the project")))))
+
+(defcustom helm-octopus-directory-persistent-action
+  #'helm-octopus-display-marker
+  "Persistent action of `helm-octopus-switch-project'."
+  :type 'function)
+
+(defcustom helm-octopus-directory-actions
+  (list (cons "Browse"
+              (-compose #'octopus--browse-dir
+                        #'octopus-project-dir-struct-dir))
+        (cons "Navigate to the Org marker"
+              #'helm-octopus-display-marker))
+  "List of actions to be available in `helm-octopus-switch-project'."
+  :type 'alist)
 
 ;;;###autoload
 (defun helm-octopus-switch-project (candidates)
@@ -99,20 +190,61 @@ CANDIDATES must be a list of `octopus-project-dir-struct' instances."
         :sources (helm-build-sync-source "Projects"
                    :multiline t
                    :candidates
-                   ;; TODO: Allow customizing the format
-                   ;; TODO: Allow including specific properties in the format
-                   (--map (cons (format "%s\n  %s"
-                                        (propertize (octopus-project-dir-struct-dir it)
-                                                    'face
-                                                    (if (octopus-project-dir-struct-exists it)
-                                                        'font-lock-string-face
-                                                      'font-lock-comment-face))
-                                        (string-join (octopus-project-dir-struct-org-tags it) ", "))
-                                (octopus-project-dir-struct-dir it))
+                   (--map (cons (funcall helm-octopus-project-dir-format-fn it)
+                                it)
                           candidates)
-                   :action
-                   (list (cons "Browse"
-                               #'octopus--browse-dir)))))
+                   :persistent-action helm-octopus-directory-persistent-action
+                   :action helm-octopus-directory-actions)))
+
+(defun helm-octopus-format-project-dir-struct-1 (x)
+  "Format a directory for Helm.
+
+X must be an instance of `octopus-project-dir-struct'."
+  (let ((remote (octopus-project-dir-struct-remote x))
+        (dir (octopus-project-dir-struct-dir x))
+        (time (octopus-project-dir-struct-last-ts-unix x))
+        (extras (-non-nil (--map (funcall it x) helm-octopus-extra-dir-fields))))
+    (->> (list (when remote
+                 (propertize remote 'face 'helm-octopus-remote-face))
+               (when (and remote dir)
+                 (propertize " | " 'face 'helm-octopus-delimiter-face))
+               (when dir
+                 (propertize dir 'face (if (octopus-project-dir-struct-exists x)
+                                           'helm-octopus-directory-face
+                                         'helm-octopus-nonexistent-directory-face)))
+               "  "
+               (when time
+                 (propertize (octopus--format-time time)
+                             'face 'helm-octopus-time-face))
+               (when extras
+                 "\n  ")
+               (string-join extras (propertize " | " 'face 'helm-octopus-delimiter-face)))
+         (-non-nil)
+         (string-join))))
+
+;;;;; Format particular fields
+
+(defun helm-octopus-format-dir-org-tags (x)
+  "Format Org tags of X.
+
+X must be a `octopus-project-dir-struct' object."
+  (when-let (tags (--filter (not (member it helm-octopus-excluded-org-tags))
+                            (octopus-project-dir-struct-org-tags x)))
+    (propertize (string-join tags " ")
+                'face 'helm-octopus-tag-face)))
+
+(defun helm-octopus-format-dir-org-property (property x)
+  "Extract an Org property.
+
+PROPERTY is a string.
+
+X must be a `octopus-project-dir-struct' object.
+
+You can use `-partial' to build a function that extracts a
+particular property, e.g.
+
+  (-partial #'helm-octopus-format-dir-org-property \"category\")"
+  (cdr (assoc property (octopus-project-dir-struct-properties x))))
 
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here

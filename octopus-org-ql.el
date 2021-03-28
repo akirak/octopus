@@ -81,7 +81,7 @@ completion interface."
                                  (funcall octopus-headline-format))
                                (propertize 'org-marker marker)))
                          markers))
-          (get-char-property 0 'org-marker choice)))))
+          (get-char-property 0 'org-marker)))))
 
 ;;;; Building queries
 

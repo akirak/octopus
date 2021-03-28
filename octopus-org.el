@@ -31,6 +31,8 @@
 ;;; Code:
 
 (require 'org)
+(require 'org-element)
+(require 'ts)
 
 (require 'octopus-utils)
 
@@ -124,6 +126,30 @@ This just calls `octopus-org-files'."
         (message "Go to the subtree root for project %s" identity)
       (goto-char initial)
       (message "Not inside a project subtree"))))
+
+(defun octopus--subtree-timestamp-info ()
+  "Return statistic information on timestamps in the subtree."
+  (org-with-wide-buffer
+   (let ((end (save-excursion
+                (org-end-of-subtree)))
+         (re (org-re-timestamp 'inactive))
+         last-ts
+         (ts-count 0))
+     (while (re-search-forward re end t)
+       (let* ((elm (org-timestamp-from-string (match-string 0)))
+              (ts (make-ts
+                   :year (org-element-property :year-start elm)
+                   :month (org-element-property :month-start elm)
+                   :day (org-element-property :day-start elm)
+                   :hour (org-element-property :hour-start elm)
+                   :minute (org-element-property :minute-start elm)
+                   :second 0)))
+         (when (or (not last-ts)
+                   (ts> ts last-ts))
+           (setq last-ts ts))
+         (cl-incf ts-count)))
+     `((last-ts . ,last-ts)
+       (ts-count . ,ts-count)))))
 
 (provide 'octopus-org)
 ;;; octopus-org.el ends here

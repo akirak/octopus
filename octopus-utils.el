@@ -135,5 +135,49 @@ which takes MAYBE-PROMPT as an argument, which see."
   (when-let (current (project-current maybe-prompt))
     (project-root current)))
 
+(defun octopus--frecency-timestamp-score (unix)
+  "Calculate the time score of the given UNIX time."
+  (let ((secs (- (float-time) unix)))
+    (cond
+     ((<= secs 14400)
+      100)
+     ((<= secs 86400)
+      80)
+     ((<= secs 259200)
+      60)
+     ((<= secs 604800)
+      40)
+     ((<= secs 2419200)
+      20)
+     ((<= secs 7776000)
+      10)
+     (t
+      0))))
+
+(defun octopus--format-time (time)
+  "Format TIME for human."
+  (let ((diff (- (float-time) time)))
+    (if (< diff (* 3600 48))
+        (octopus--format-duration diff)
+      (format-time-string "%F (%a)" time))))
+
+(defun octopus--format-duration (seconds)
+  "Format a time duration in SECONDS."
+  (cond
+   ((< seconds 120)
+    "just now")
+   ((< seconds 3600)
+    (format "%.f minutes ago" (/ seconds 60)))
+   ((< seconds (* 3600 24))
+    (format "%.f hours ago" (/ seconds 3600)))
+   ((< seconds (* 3600 24))
+    (format "%.f hours ago" (/ seconds 3600)))
+   ((< seconds (* 3600 24 60))
+    (format "%.f days ago" (/ seconds (* 3600 24))))
+   ((< seconds (* 3600 24 365))
+    (format "%.f months ago" (/ seconds (* 3600 24 30))))
+   (t
+    (format "%.f years ago" (/ seconds (* 3600 24 365))))))
+
 (provide 'octopus-utils)
 ;;; octopus-utils.el ends here
