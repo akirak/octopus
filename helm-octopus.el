@@ -167,17 +167,28 @@ X must be an instance of `octopus-project-dir-struct'."
         "Select a subtree to display: " markers
         :name "Org subtrees for the project")))))
 
+(defun helm-octopus-todo-list (x)
+  "Display a todo list.
+
+X must be an instance of `octopus-project-dir-struct'."
+  (let ((dir (octopus-project-dir-struct-dir x))
+        (dir-exists (octopus-project-dir-struct-exists x)))
+    (if (and dir dir-exists)
+        (octopus--project-todo-list dir))))
+
 (defcustom helm-octopus-directory-persistent-action
   #'helm-octopus-display-marker
   "Persistent action of `helm-octopus-switch-project'."
   :type 'function)
 
 (defcustom helm-octopus-directory-actions
-  (list (cons "Browse"
-              (-compose #'octopus--browse-dir
-                        #'octopus-project-dir-struct-dir))
-        (cons "Navigate to the Org marker"
-              #'helm-octopus-display-marker))
+  (helm-make-actions
+   "Browse the directory"
+   #'helm-octopus-browse-dir
+   "Navigate to the Org marker"
+   #'helm-octopus-display-marker
+   "Project todo list"
+   #'helm-octopus-todo-list)
   "List of actions to be available in `helm-octopus-switch-project'."
   :type 'alist)
 
