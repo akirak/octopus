@@ -295,20 +295,19 @@ PREDICATE is the same as in `octopus-switch-project'."
 PREDICATE is an extra filter passed to `org-ql'."
   (interactive)
   ;; TODO: When a universal argument is given, sort projects by last inactive timestamp
-  (let ((candidates (octopus--project-dirs)))
-    (pcase octopus-switch-project-select-interface
-      (`helm
-       (helm-octopus-switch-project candidates))
-      ((pred functionp)
-       (octopus--browse-dir
-        (funcall octopus-switch-project-select-interface
-                 "Project root: "
-                 (--map (or (octopus-project-dir-struct-dir it)
-                            (octopus-project-dir-struct-remote it))
-                        candidates))))
-      (_
-       (user-error "Invalid value for octopus-switch-project-select-interface: %s"
-                   octopus-switch-project-select-interface)))))
+  (pcase octopus-switch-project-select-interface
+    (`helm
+     (helm-octopus-project))
+    ((pred functionp)
+     (octopus--browse-dir
+      (funcall octopus-switch-project-select-interface
+               "Project root: "
+               (--map (or (octopus-project-dir-struct-dir it)
+                          (octopus-project-dir-struct-remote it))
+                      (octopus--project-dirs)))))
+    (_
+     (user-error "Invalid value for octopus-switch-project-select-interface: %s"
+                 octopus-switch-project-select-interface))))
 
 ;;;###autoload
 (defun octopus-switch-project-by-org-category (category)

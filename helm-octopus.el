@@ -181,20 +181,21 @@ X must be an instance of `octopus-project-dir-struct'."
   "List of actions to be available in `helm-octopus-switch-project'."
   :type 'alist)
 
-;;;###autoload
-(defun helm-octopus-switch-project (candidates)
-  "Switch to a project directory.
+(defvar helm-octopus-project-source
+  (helm-make-source "Projects" 'helm-source-sync
+    :multiline t
+    :candidates (lambda ()
+                  (--map (cons (funcall helm-octopus-project-dir-format-fn it)
+                               it)
+                         (octopus--project-dirs)))
+    :persistent-action 'helm-octopus-directory-persistent-action
+    :action 'helm-octopus-directory-actions))
 
-CANDIDATES must be a list of `octopus-project-dir-struct' instances."
+;;;###autoload
+(defun helm-octopus-project ()
+  "Switch to a project directory."
   (helm :project "Switch to a project: "
-        :sources (helm-build-sync-source "Projects"
-                   :multiline t
-                   :candidates
-                   (--map (cons (funcall helm-octopus-project-dir-format-fn it)
-                                it)
-                          candidates)
-                   :persistent-action helm-octopus-directory-persistent-action
-                   :action helm-octopus-directory-actions)))
+        :sources helm-octopus-project-source))
 
 (defun helm-octopus-format-project-dir-struct-1 (x)
   "Format a directory for Helm.
