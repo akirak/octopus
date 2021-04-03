@@ -210,6 +210,27 @@ If INTERACTIVE, the function displays the root directory using
       (completing-read "Local copy: " it)
       (format "No local copy of the repository %s" remote-repo))))
 
+;;;; Project files
+
+;;;###autoload
+(defun octopus-insert-file-link ()
+  "Insert a link to a file in the project."
+  (interactive)
+  (unless (derived-mode-p 'org-mode)
+    (user-error "Not in org-mode"))
+  (if-let* ((root (octopus--org-project-root))
+            (default-directory root)
+            (project (project-current))
+            (files (project-files project))
+            (file (completing-read (format "Insert file link (in %s): " root)
+                                   (--map (file-relative-name it root)
+                                          files)))
+            (default-directory (file-name-directory
+                                (buffer-file-name))))
+      (org-insert-link nil (concat "file:" (expand-file-name file root))
+                       file)
+    (user-error "Aborted or no data")))
+
 ;;;; Switching to a project
 
 (defcustom octopus-project-dir-group 'dir
