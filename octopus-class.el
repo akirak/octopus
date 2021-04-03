@@ -71,7 +71,20 @@
      (lambda (dir)
        (if (and dir (file-directory-p dir))
            (octopus--project-todo-list dir)
-         (error "Directory %s is nil or does not exist" dir)))))
+         (error "Directory %s is nil or does not exist" dir))))
+    (find-file
+     :description "Find a file in the project"
+     :slot project-dir
+     :reduce
+     (lambda (dirs)
+       (octopus--pick-interactively "Project directory: "
+         (-uniq (-non-nil dirs))))
+     :dispatch
+     (lambda (dir)
+       (if (and dir (file-directory-p dir))
+           (let ((default-directory dir))
+             (project-find-file))
+         (error "Non-existent directory %s" dir)))))
   "Alist of actions.")
 
 ;;;; Search
