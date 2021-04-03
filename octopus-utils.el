@@ -57,6 +57,23 @@ the error message as NULL-MESSAGE."
      (_
       ,exp)))
 
+(cl-defun octopus--pick-interactively (prompt items
+                                              &optional (format-fn #'identity))
+  (declare (indent 1))
+  (pcase items
+    (`nil
+     nil)
+    (`(,item)
+     item)
+    (_
+     (let ((result (completing-read
+                    prompt
+                    (-map (lambda (x)
+                            (propertize (funcall format-fn x)
+                                        'octopus-value x))
+                          items))))
+       (get-char-property 0 'octopus-value result)))))
+
 (defun octopus--default-git-remote-url (&optional dir)
   "Return the URL of the default Git remote at DIR.
 
