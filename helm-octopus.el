@@ -154,7 +154,10 @@ The result will be used by `-sort' to sort items."
   :type 'function)
 
 (defun helm-octopus-scoped-ql-default-sort (a b)
-  "The default sorting function for `helm-octopus-project-scoped-ql'."
+  "The default sorting function for `helm-octopus-project-scoped-ql'.
+
+
+A and B must be Org elements."
   (let ((threshold 50))
     (or (let ((time-a (unless (eql 'done (org-element-property :todo-type a))
                         (-some->> (or (org-element-property :scheduled a)
