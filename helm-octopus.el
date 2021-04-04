@@ -183,7 +183,8 @@ The result will be used by `-sort' to sort items."
   (->> (octopus--ql-select `(and (ancestors ,helm-octopus-scoped-ql-project-query)
                                  ,(org-ql--query-string-to-sexp helm-pattern))
          :action
-         '(progn
+         '(org-save-outline-visibility t
+            (org-show-all)
             (font-lock-ensure (point-at-bol) (point-at-eol))
             (let* ((olp (org-get-outline-path nil t))
                    (heading (org-get-heading))
