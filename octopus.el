@@ -33,6 +33,7 @@
 
 (require 'octopus-org-ql)
 (require 'octopus-class)
+(require 'octopus-select)
 (require 'octopus-utils)
 
 (defgroup octopus nil
