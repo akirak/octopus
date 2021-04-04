@@ -33,53 +33,25 @@
   '((browse-dir
      :description "Browse the project directory"
      :slot project-dir
-     :reduce (lambda (dirs)
-               (octopus--pick-interactively "Project directory: "
-                 (-uniq (-non-nil dirs))))
-     :dispatch
-     (lambda (dir)
-       (cond
-        ((and dir (file-directory-p dir))
-         (octopus--browse-dir dir))
-        (dir
-         (error "%s is not an existing directory, so you cannot open it" dir))
-        (t
-         (error "Directory is nil")))))
+     :verify file-directory-p
+     :dispatch octopus--browse-dir)
     (display-org-marker
      :description "Display the Org subtree"
      :slot marker
-     :reduce
-     (lambda (markers)
-       (octopus--single-or markers
-         (octopus--select-org-marker
-          "Select a subtree to display: " markers
-          :name "Org subtrees for the project")))
      :dispatch octopus--display-org-marker)
     (todo-list
      :description "Show a todo list"
      :slot project-dir
-     :reduce
-     (lambda (dirs)
-       (octopus--pick-interactively "Project directory: "
-         (-uniq (-non-nil dirs))))
-     :dispatch
-     (lambda (dir)
-       (if (and dir (file-directory-p dir))
-           (octopus--project-todo-list dir)
-         (error "Directory %s is nil or does not exist" dir))))
+     :verify file-directory-p
+     :dispatch octopus--project-todo-list)
     (find-file
      :description "Find a file in the project"
      :slot project-dir
-     :reduce
-     (lambda (dirs)
-       (octopus--pick-interactively "Project directory: "
-         (-uniq (-non-nil dirs))))
+     :verify file-directory-p
      :dispatch
      (lambda (dir)
-       (if (and dir (file-directory-p dir))
-           (let ((default-directory dir))
-             (project-find-file))
-         (error "Non-existent directory %s" dir)))))
+       (let ((default-directory dir))
+         (project-find-file)))))
   "Alist of actions.")
 
 ;;;; Search
@@ -155,21 +127,49 @@ KEY can be frecency or nil."
 
 ;;;; Invoking actions
 
-(defun octopus--run-action (action project)
+(cl-defun octopus--run-action (action project &key dispatch)
   "Invoke an ACTION on PROJECT.
 
-ACTION should be a symbol in `octopus-org-project-actions'."
+ACTION should be a symbol in `octopus-org-project-actions'.
+
+DISPATCH can be a function that takes the data as an
+argument. This is intended for testing. ."
   (let* ((plist (or (alist-get action octopus-org-project-actions)
                     (error "Undefined entry %s in octopus-org-project-actions" action)))
          (slot (plist-get plist :slot))
+         ;; TODO: Allow using a custom reducer from (plist-get plist :reduce)
+         (reducer (lambda (xs)
+                    ;; If an empty list is given, the result will be nil,
+                    ;; so you can handle fallback situations.
+                    (pcase (-flatten-n 1 (-non-nil xs))
+                      (`(,item) item)
+                      ;; TODO: Add support for fallback
+                      (`nil (cl-ecase slot
+                              (project-dir
+                               (error "No directory"))
+                              (project-remote
+                               (error "No remote"))))
+                      (xs (cl-ecase slot
+                            (project-dir
+                             (octopus--pick-interactively "Project directory: " xs))
+                            (project-remote
+                             (error "TODO: Not implemented"))
+                            (marker
+                             (octopus--select-org-marker
+                              "Select a subtree: " xs
+                              :name "Org subtrees for the project")))))))
          (data (cl-etypecase project
                  (octopus-org-project-class
                   (slot-value project slot))
                  (octopus-org-project-group-class
                   (->> (oref project projects)
                        (-map (lambda (project) (slot-value project slot)))
-                       (funcall (plist-get plist :reduce)))))))
-    (funcall (plist-get plist :dispatch) data)))
+                       (funcall reducer))))))
+    (when-let (verify (plist-get plist :verify))
+      (unless (funcall verify data)
+        (error "Test failed on the value of %s: %s returned non-nil on %s"
+               slot verify data)))
+    (funcall (or dispatch (plist-get plist :dispatch)) data)))
 
 (provide 'octopus-class)
 ;;; octopus-class.el ends here
