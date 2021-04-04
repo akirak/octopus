@@ -76,8 +76,10 @@ The function is called with no arguments at the marker position."
   :group 'octopus
   :type 'function)
 
-(defun octopus-format-headline-1 ()
-  "Default implementation of `octopus-headline-format'."
+(defun octopus-format-headline-1 (&optional width)
+  "Default implementation of `octopus-headline-format'.
+
+WIDTH is an optional width of the output string in characters."
   (format "%s: %s %s"
           (buffer-name)
           (org-format-outline-path
@@ -86,7 +88,7 @@ The function is called with no arguments at the marker position."
            ;; performance, but it probably won't matter, assuming it
            ;; is used to select an entry from 10 or less root
            ;; subtrees.
-           (frame-width))
+           (or width (frame-width)))
           (org-make-tag-string (org-get-tags))))
 
 (defun octopus--display-org-marker (marker)
