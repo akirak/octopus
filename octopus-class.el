@@ -46,7 +46,7 @@
    (marker :initarg :marker
            :type marker)
    (timestamp-info :initarg :timestamp-info
-                   :type octopus-timestamp-info)))
+                   :type (or null octopus-timestamp-info))))
 
 (defclass octopus-org-project-group-class ()
   ((group-type :initarg :group-type
@@ -58,11 +58,6 @@
      :type number)))
 
 ;;;; Custom variables
-
-(defcustom octopus-project-org-properties nil
-  "List of properties to be included scanned in `octopus-switch-project'."
-  :type '(repeat string)
-  :group 'octopus)
 
 (defcustom octopus-org-project-actions
   '((browse-dir

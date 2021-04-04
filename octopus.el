@@ -36,6 +36,8 @@
 (require 'octopus-select)
 (require 'octopus-utils)
 
+(declare-function helm-octopus-project "ext:helm-octopus")
+
 (defgroup octopus nil
   "Integration between Org and project.el."
   :group 'org

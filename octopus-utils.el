@@ -32,6 +32,7 @@
 (require 'dash)
 (require 'cl-lib)
 (require 'project)
+(require 'ts)
 
 (defcustom octopus-default-git-remote-name "origin"
   "Name of the default Git remote."
@@ -181,9 +182,14 @@ which takes MAYBE-PROMPT as an argument, which see."
      (t
       0))))
 
-(defun octopus--format-time (time)
-  "Format TIME for human."
-  (let ((diff (- (float-time) time)))
+(defun octopus--format-time (time &optional current-time)
+  "Format a time for human.
+
+TIME is a unix time, which you can get using `current-time'.
+
+Optionally, you can also specify CURRENT-TIME for computing the
+time difference. This is intended for testing."
+  (let ((diff (- (or current-time (float-time)) time)))
     (if (< diff (* 3600 48))
         (octopus--format-duration diff)
       (format-time-string "%F (%a)" time))))
@@ -205,6 +211,35 @@ which takes MAYBE-PROMPT as an argument, which see."
     (format "%.f months ago" (/ seconds (* 3600 24 30))))
    (t
     (format "%.f years ago" (/ seconds (* 3600 24 365))))))
+
+(cl-defstruct octopus-timestamp-info
+  "Represents a collection of timestamps needed for calculating frecency."
+  last-ts count)
+
+(defun octopus-merge-timestamp-info (x y)
+  "Merge two instances X and Y of `octopus-timestamp-info'."
+  (make-octopus-timestamp-info :last-ts
+                               (let ((a (octopus-timestamp-info-last-ts x))
+                                     (b (octopus-timestamp-info-last-ts y)))
+                                 (if (and a b)
+                                     (if (ts> a b)
+                                         a
+                                       b)
+                                   (or a b)))
+                               :count
+                               (+ (octopus-timestamp-info-count x)
+                                  (octopus-timestamp-info-count y))))
+
+(defun octopus-timestamp-info-frecency (x)
+  "Calculate the frecency score of X.
+
+X must be an instance of `octopus-timestamp-info'."
+  (let ((last-ts (octopus-timestamp-info-last-ts x))
+        (count (octopus-timestamp-info-count x)))
+    (if last-ts
+        (/ (* count (octopus--frecency-timestamp-score (ts-unix last-ts)))
+           (min count 10))
+      0)))
 
 (provide 'octopus-utils)
 ;;; octopus-utils.el ends here
