@@ -128,8 +128,6 @@ This just calls `octopus-org-files'."
       (goto-char initial)
       (message "Not inside a project subtree"))))
 
-(cl-defstruct octopus-timestamp-info last-ts count)
-
 (defun octopus--subtree-timestamp-info ()
   "Return statistic information on timestamps in the subtree."
   (org-with-wide-buffer
@@ -153,29 +151,6 @@ This just calls `octopus-org-files'."
          (cl-incf ts-count)))
      (make-octopus-timestamp-info :last-ts last-ts
                                   :count ts-count))))
-
-(defun octopus-merge-timestamp-info (x y)
-  "Merge two instances X and Y of `octopus-timestamp-info'."
-  (make-octopus-timestamp-info :last-ts
-                               (let ((a (octopus-timestamp-info-last-ts x))
-                                     (b (octopus-timestamp-info-last-ts y)))
-                                 (if (ts> a b)
-                                     a
-                                   b))
-                               :count
-                               (+ (octopus-timestamp-info-count x)
-                                  (octopus-timestamp-info-count y))))
-
-(defun octopus-timestamp-info-frecency (x)
-  "Calculate the frecency score of X.
-
-X must be an instance of `octopus-timestamp-info'."
-  (let ((last-ts (octopus-timestamp-info-last-ts x))
-        (count (octopus-timestamp-info-count x)))
-    (if last-ts
-        (/ (* count (octopus--frecency-timestamp-score (ts-unix last-ts)))
-           (min count 10))
-      0)))
 
 (provide 'octopus-org)
 ;;; octopus-org.el ends here
