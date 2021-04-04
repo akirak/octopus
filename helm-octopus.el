@@ -139,5 +139,56 @@ PREDICATE is an Org Ql predicate as passed to
                 (-partial #'octopus--run-action symbol)))
         octopus-org-project-actions))
 
+;;;; Project-scoped helm-org-ql
+
+(defvar helm-octopus-scoped-ql-root-olps)
+(defvar helm-octopus-scoped-ql-window-width)
+(defvar helm-octopus-scoped-ql-project-query)
+
+(defun helm-octopus-scoped-ql--candidates ()
+  "Build candidates for `helm-octopus-scoped-ql'."
+  (->> (octopus--ql-select `(and (ancestors ,helm-octopus-scoped-ql-project-query)
+                                 ,(org-ql--query-string-to-sexp helm-pattern))
+         :action
+         '(let* ((olp (org-get-outline-path nil t))
+                 (heading (org-get-heading))
+                 (local-olp (cl-some (lambda (root-olp)
+                                       (let ((n (length root-olp)))
+                                         (when (equal root-olp (-take n olp))
+                                           (-drop n olp))))
+                                     helm-octopus-scoped-ql-root-olps)))
+            (when local-olp
+              (cons (concat (substring-no-properties
+                             (org-format-outline-path
+                              local-olp
+                              helm-octopus-scoped-ql-window-width))
+                            "/"
+                            heading)
+                    (point-marker)))))
+       (-non-nil)))
+
+;;;###autoload
+(defun helm-octopus-scoped-ql ()
+  "Project-scoped helm-org-ql."
+  (interactive)
+  (let* ((root (if (and octopus-org-dwim-commands
+                        (derived-mode-p 'org-mode))
+                   (octopus--org-project-root)
+                 (octopus--project-root)))
+         (project-query `(project ,root)))
+    (setq helm-octopus-scoped-ql-root-olps (octopus--ql-select project-query
+                                             :action '(org-get-outline-path t t))
+          helm-octopus-scoped-ql-window-width (window-width (helm-window))
+          helm-octopus-scoped-ql-project-query project-query)
+    (helm :prompt "Org ql: "
+          :sources
+          (helm-make-source (format "Project %s: " root) 'helm-source-sync
+            :candidates #'helm-octopus-scoped-ql--candidates
+            :match #'identity
+            :fuzzy-match nil
+            :multimatch nil
+            :nohighlight t
+            :volatile t))))
+
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here
