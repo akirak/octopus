@@ -228,6 +228,8 @@ The result will be used by `-sort' to sort items."
             :fuzzy-match nil
             :multimatch nil
             :nohighlight t
+            :persistent-action #'helm-octopus-show-marker
+            :action #'helm-octopus-show-marker
             :volatile t))))
 
 (provide 'helm-octopus)
