@@ -30,6 +30,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'octopus-utils)
 (require 'octopus-org)
 
