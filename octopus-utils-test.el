@@ -54,7 +54,7 @@
                                                     :hour 0 :minute 0 :second 0))
                                   (ts-unix (make-ts :year 2020 :month 1 :day 2
                                                     :hour 23 :minute 0 :second 0)))
-            :to-equal "47 hours ago")))
+            :to-equal "2 days ago")))
 
 (describe "octopus--format-duration"
   (it "just now"
@@ -106,7 +106,7 @@
                         (make-octopus-timestamp-info :last-ts ts-a :count 1)
                         (make-octopus-timestamp-info :last-ts ts-b :count 2))))
         (expect (ts= (octopus-timestamp-info-last-ts merged-ts) ts-b) :to-be-truthy)
-        (expect (octopus-timestamp-infoc-count merged-ts) :to-be 3))
+        (expect (octopus-timestamp-info-count merged-ts) :to-be 3))
       (let ((merged-ts (octopus-merge-timestamp-info
                         (make-octopus-timestamp-info :last-ts ts-c :count 2)
                         (make-octopus-timestamp-info :last-ts ts-a :count 5))))
