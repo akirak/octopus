@@ -59,11 +59,6 @@
 
 ;;;; Custom variables
 
-(defcustom octopus-project-org-properties nil
-  "List of properties to be included scanned in `octopus-switch-project'."
-  :type '(repeat string)
-  :group 'octopus)
-
 (defcustom octopus-org-project-actions
   '((browse-dir
      :description "Browse the project directory"
