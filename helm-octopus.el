@@ -147,14 +147,14 @@ PREDICATE is an Org Ql predicate as passed to
 
 (defcustom helm-octopus-scoped-ql-sort-fn
   #'helm-octopus-scoped-ql-default-sort
-  "Function used to sort candidates in `helm-octopus-scoped-ql'.
+  "Function used to sort candidates in `helm-octopus-project-scoped-ql'.
 
 This should be a 2-ary function that takes org elements as arguments.
 The result will be used by `-sort' to sort items."
   :type 'function)
 
 (defun helm-octopus-scoped-ql-default-sort (a b)
-  "The default sorting function for `helm-octopus-scoped-ql'."
+  "The default sorting function for `helm-octopus-project-scoped-ql'."
   (let ((threshold 50))
     (or (let ((time-a (-some->> (or (org-element-property :scheduled a)
                                     (org-element-property :deadline a))
@@ -177,7 +177,7 @@ The result will be used by `-sort' to sort items."
                  (>= frec-a threshold)))))))
 
 (defun helm-octopus-scoped-ql--candidates ()
-  "Build candidates for `helm-octopus-scoped-ql'."
+  "Build candidates for `helm-octopus-project-scoped-ql'."
   (->> (octopus--ql-select `(and (ancestors ,helm-octopus-scoped-ql-project-query)
                                  ,(org-ql--query-string-to-sexp helm-pattern))
          :action
@@ -208,7 +208,7 @@ The result will be used by `-sort' to sort items."
        (-map #'cdr)))
 
 ;;;###autoload
-(defun helm-octopus-scoped-ql ()
+(defun helm-octopus-project-scoped-ql ()
   "Project-scoped helm-org-ql."
   (interactive)
   (let* ((root (if (and octopus-org-dwim-commands
