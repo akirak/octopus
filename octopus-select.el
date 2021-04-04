@@ -93,17 +93,17 @@ argument and returns a string or nil."
 
 (cl-defmethod octopus-format-candidate-multiline ((x octopus-org-project-group-class))
   "Format a candiate X for a completion interface that supports multi-line entries."
-  (let* ((projects (slot-value x 'projects))
+  (let* ((projects (oref x projects))
          (project (car projects))
-         (remote (slot-value project 'project-remote))
-         (dir (slot-value project 'project-dir))
+         (remote (oref project project-remote))
+         (dir (oref project project-dir))
          (time (->> projects
                     (-map (lambda (p)
-                            (when-let (info (slot-value p 'timestamp-info))
+                            (when-let (info (oref p timestamp-info))
                               (ts-unix (octopus-timestamp-info-last-ts info)))))
                     (-non-nil)
                     (-max)))
-         (markers (-map (lambda (p) (slot-value p 'marker)) projects))
+         (markers (-map (lambda (p) (oref p marker)) projects))
          (extras (when octopus-select-project-extra-lines-format
                    (funcall octopus-select-project-extra-lines-format markers))))
     (octopus-select-format-project :remote remote
