@@ -155,26 +155,26 @@ The result will be used by `-sort' to sort items."
 
 (defun helm-octopus-scoped-ql-default-sort (a b)
   "The default sorting function for `helm-octopus-scoped-ql'."
-  (or (let ((time-a (-some->> (org-element-property :scheduled a)
-                      (org-timestamp-to-time)))
-            (time-b (-some->> (org-element-property :scheduled b)
-                      (org-timestamp-to-time))))
-        (cond
-         ((and time-a time-b)
-          (cond
-           ((time-less-p time-a time-b)
-            1)
-           ((time-less-p time-a time-b)
-            -1)))
-         (time-a
-          1)
-         (time-b
-          -1)))
-      (let ((pri-a (or (org-element-property :priority a)
-                       org-default-priority))
-            (pri-b (or (org-element-property :priority b)
-                       org-default-priority)))
-        (- pri-a pri-b))))
+  (let ((threshold 50))
+    (or (let ((time-a (-some->> (or (org-element-property :scheduled a)
+                                    (org-element-property :deadline a))
+                        (org-timestamp-to-time)))
+              (time-b (-some->> (or (org-element-property :scheduled b)
+                                    (org-element-property :deadline b))
+                        (org-timestamp-to-time))))
+          (if (and time-a time-b)
+              (time-less-p time-a time-b)
+            (and time-a (not time-b))))
+        (let ((frec-a (org-element-property :frecency-score a))
+              (frec-b (org-element-property :frecency-score b)))
+          (if (and frec-a frec-b)
+              (or (and (>= frec-a threshold)
+                       (>= frec-b threshold)
+                       (> frec-a frec-b))
+                  (and (>= frec-a threshold)
+                       (< frec-b threshold)))
+            (and frec-a
+                 (>= frec-a threshold)))))))
 
 (defun helm-octopus-scoped-ql--candidates ()
   "Build candidates for `helm-octopus-scoped-ql'."
@@ -191,14 +191,18 @@ The result will be used by `-sort' to sort items."
                                              (-drop n olp))))
                                        helm-octopus-scoped-ql-root-olps)))
               (when local-olp
-                (cons (org-element-headline-parser (org-entry-end-position))
-                      (cons (concat (substring-no-properties
-                                     (org-format-outline-path
-                                      local-olp
-                                      helm-octopus-scoped-ql-window-width))
-                                    "/"
-                                    heading)
-                            (point-marker)))))))
+                (let* ((ts-info (octopus--subtree-timestamp-info))
+                       (frecency-score (octopus-timestamp-info-frecency ts-info)))
+                  (cons (-> (org-element-headline-parser (org-entry-end-position))
+                            (org-element-put-property :frecency-score frecency-score))
+                        (cons (concat (substring-no-properties
+                                       (org-format-outline-path
+                                        local-olp
+                                        helm-octopus-scoped-ql-window-width))
+                                      "/"
+                                      heading
+                                      (format " (%.f)" frecency-score))
+                              (point-marker))))))))
        (-non-nil)
        (-sort (-on helm-octopus-scoped-ql-sort-fn #'car))
        (-map #'cdr)))
