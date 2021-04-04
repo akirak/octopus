@@ -46,7 +46,7 @@
    (marker :initarg :marker
            :type marker)
    (timestamp-info :initarg :timestamp-info
-                   :type octopus-timestamp-info)))
+                   :type (or null octopus-timestamp-info))))
 
 (defclass octopus-org-project-group-class ()
   ((group-type :initarg :group-type
