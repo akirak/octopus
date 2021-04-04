@@ -97,12 +97,13 @@ argument and returns a string or nil."
          (project (car projects))
          (remote (oref project project-remote))
          (dir (oref project project-dir))
-         (time (->> projects
-                    (-map (lambda (p)
-                            (when-let (info (oref p timestamp-info))
-                              (ts-unix (octopus-timestamp-info-last-ts info)))))
-                    (-non-nil)
-                    (-max)))
+         (time (-some->> projects
+                 (-map (lambda (p)
+                         (when-let* ((info (oref p timestamp-info))
+                                     (ts (octopus-timestamp-info-last-ts info)))
+                           (ts-unix ts))))
+                 (-non-nil)
+                 (-max)))
          (markers (-map (lambda (p) (oref p marker)) projects))
          (extras (when octopus-select-project-extra-lines-format
                    (funcall octopus-select-project-extra-lines-format markers))))
