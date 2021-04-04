@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "26.1") (org "9.3") (helm "3.6") (octopus "0.1") (dash "2.18"))
+;; Package-Requires: ((emacs "27.1") (org "9.3") (helm "3.6") (octopus "0.1") (dash "2.18"))
 ;; Keywords: convenience tools outlines
 ;; URL: https://github.com/akirak/octopus.el
 
