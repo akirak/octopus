@@ -187,7 +187,6 @@ The result will be used by `-sort' to sort items."
             (org-show-all)
             (font-lock-ensure (point-at-bol) (point-at-eol))
             (let* ((olp (org-get-outline-path nil t))
-                   (heading (org-get-heading))
                    (local-olp (cl-some (lambda (root-olp)
                                          (let ((n (length root-olp)))
                                            (when (equal root-olp (-take n olp))
@@ -195,19 +194,38 @@ The result will be used by `-sort' to sort items."
                                        helm-octopus-scoped-ql-root-olps)))
               (when local-olp
                 (let* ((ts-info (octopus--subtree-timestamp-info))
-                       (frecency-score (octopus-timestamp-info-frecency ts-info)))
-                  (cons (-> (org-element-headline-parser (org-entry-end-position))
-                            (org-element-put-property :frecency-score frecency-score))
-                        (cons (concat (substring-no-properties
-                                       (org-format-outline-path
-                                        local-olp
-                                        helm-octopus-scoped-ql-window-width))
-                                      "/"
-                                      heading)
+                       (frecency-score (octopus-timestamp-info-frecency ts-info))
+                       (element (-> (org-element-headline-parser (org-entry-end-position))
+                                    (org-element-put-property :frecency-score frecency-score))))
+                  (cons element
+                        (cons (helm-octopus-scoped-ql--format element
+                                :local-olp local-olp
+                                :last-ts (octopus-timestamp-info-last-ts ts-info))
                               (point-marker))))))))
        (-non-nil)
        (-sort (-on helm-octopus-scoped-ql-sort-fn #'car))
        (-map #'cdr)))
+
+(cl-defun helm-octopus-scoped-ql--format (element &key local-olp last-ts)
+  "Format each candidate from the data.
+
+ELEMENT, LOCAL-OLP, and LAST-TS are passed from
+`helm-octopus-scoped-ql--candidates'."
+  (declare (indent 1))
+  (concat (substring-no-properties (org-format-outline-path
+                                    local-olp helm-octopus-scoped-ql-window-width))
+          "/"
+          (org-get-heading)
+          " "
+          (if-let (scheduled (org-element-property :scheduled element))
+              (concat " SCHEDULED:" (propertize (org-element-property :raw-value scheduled)
+                                                'face 'org-scheduled))
+            "")
+          " "
+          (if last-ts
+              (propertize (octopus--format-time (ts-unix last-ts))
+                          'face 'font-lock-comment-face)
+            "")))
 
 ;;;###autoload
 (defun helm-octopus-project-scoped-ql ()
