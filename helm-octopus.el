@@ -200,8 +200,7 @@ The result will be used by `-sort' to sort items."
                                         local-olp
                                         helm-octopus-scoped-ql-window-width))
                                       "/"
-                                      heading
-                                      (format " (%.f)" frecency-score))
+                                      heading)
                               (point-marker))))))))
        (-non-nil)
        (-sort (-on helm-octopus-scoped-ql-sort-fn #'car))
