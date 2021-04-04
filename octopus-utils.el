@@ -32,6 +32,7 @@
 (require 'dash)
 (require 'cl-lib)
 (require 'project)
+(require 'ts)
 
 (defcustom octopus-default-git-remote-name "origin"
   "Name of the default Git remote."
