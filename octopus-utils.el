@@ -233,7 +233,6 @@ time difference. This is intended for testing."
   "Calculate the frecency score of X.
 
 X must be an instance of `octopus-timestamp-info'."
-  (check-type x octopus-timestamp-info)
   (let ((last-ts (octopus-timestamp-info-last-ts x))
         (count (octopus-timestamp-info-count x)))
     (if last-ts
