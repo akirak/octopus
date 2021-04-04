@@ -145,27 +145,63 @@ PREDICATE is an Org Ql predicate as passed to
 (defvar helm-octopus-scoped-ql-window-width)
 (defvar helm-octopus-scoped-ql-project-query)
 
+(defcustom helm-octopus-scoped-ql-sort-fn
+  #'helm-octopus-scoped-ql-default-sort
+  "Function used to sort candidates in `helm-octopus-scoped-ql'.
+
+This should be a 2-ary function that takes org elements as arguments.
+The result will be used by `-sort' to sort items."
+  :type 'function)
+
+(defun helm-octopus-scoped-ql-default-sort (a b)
+  "The default sorting function for `helm-octopus-scoped-ql'."
+  (or (let ((time-a (-some->> (org-element-property :scheduled a)
+                      (org-timestamp-to-time)))
+            (time-b (-some->> (org-element-property :scheduled b)
+                      (org-timestamp-to-time))))
+        (cond
+         ((and time-a time-b)
+          (cond
+           ((time-less-p time-a time-b)
+            1)
+           ((time-less-p time-a time-b)
+            -1)))
+         (time-a
+          1)
+         (time-b
+          -1)))
+      (let ((pri-a (or (org-element-property :priority a)
+                       org-default-priority))
+            (pri-b (or (org-element-property :priority b)
+                       org-default-priority)))
+        (- pri-a pri-b))))
+
 (defun helm-octopus-scoped-ql--candidates ()
   "Build candidates for `helm-octopus-scoped-ql'."
   (->> (octopus--ql-select `(and (ancestors ,helm-octopus-scoped-ql-project-query)
                                  ,(org-ql--query-string-to-sexp helm-pattern))
          :action
-         '(let* ((olp (org-get-outline-path nil t))
-                 (heading (org-get-heading))
-                 (local-olp (cl-some (lambda (root-olp)
-                                       (let ((n (length root-olp)))
-                                         (when (equal root-olp (-take n olp))
-                                           (-drop n olp))))
-                                     helm-octopus-scoped-ql-root-olps)))
-            (when local-olp
-              (cons (concat (substring-no-properties
-                             (org-format-outline-path
-                              local-olp
-                              helm-octopus-scoped-ql-window-width))
-                            "/"
-                            heading)
-                    (point-marker)))))
-       (-non-nil)))
+         '(progn
+            (font-lock-ensure (point-at-bol) (point-at-eol))
+            (let* ((olp (org-get-outline-path nil t))
+                   (heading (org-get-heading))
+                   (local-olp (cl-some (lambda (root-olp)
+                                         (let ((n (length root-olp)))
+                                           (when (equal root-olp (-take n olp))
+                                             (-drop n olp))))
+                                       helm-octopus-scoped-ql-root-olps)))
+              (when local-olp
+                (cons (org-element-headline-parser (org-entry-end-position))
+                      (cons (concat (substring-no-properties
+                                     (org-format-outline-path
+                                      local-olp
+                                      helm-octopus-scoped-ql-window-width))
+                                    "/"
+                                    heading)
+                            (point-marker)))))))
+       (-non-nil)
+       (-sort (-on helm-octopus-scoped-ql-sort-fn #'car))
+       (-map #'cdr)))
 
 ;;;###autoload
 (defun helm-octopus-scoped-ql ()
