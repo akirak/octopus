@@ -31,10 +31,6 @@
 
 ;;; Code:
 
-(require 'octopus-org)
-(require 'octopus-utils)
-(require 'octopus-class)
-(require 'octopus-select)
 (require 'octopus)
 (require 'org)
 (require 'helm)
@@ -110,7 +106,10 @@ This can be a symbol in `octopus-org-project-actions'."
 
 ;;;###autoload
 (defun helm-octopus-project (predicate)
-  "Switch to a project directory."
+  "Switch to a project directory.
+
+PREDICATE is an Org Ql predicate as passed to
+`octopus-org-project-groups'."
   (interactive (list '(any-project)))
   (helm :project "Switch to a project: "
         :sources (helm-make-source "Projects" 'helm-octopus-project-source

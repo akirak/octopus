@@ -32,6 +32,7 @@
 
 (require 'org)
 (require 'org-element)
+(require 'cl-lib)
 (require 'ts)
 
 (require 'octopus-utils)
@@ -127,7 +128,7 @@ This just calls `octopus-org-files'."
       (goto-char initial)
       (message "Not inside a project subtree"))))
 
-(defstruct octopus-timestamp-info last-ts count)
+(cl-defstruct octopus-timestamp-info last-ts count)
 
 (defun octopus--subtree-timestamp-info ()
   "Return statistic information on timestamps in the subtree."
@@ -166,6 +167,9 @@ This just calls `octopus-org-files'."
                                   (octopus-timestamp-info-count y))))
 
 (defun octopus-timestamp-info-frecency (x)
+  "Calculate the frecency score of X.
+
+X must be an instance of `octopus-timestamp-info'."
   (let ((last-ts (octopus-timestamp-info-last-ts x))
         (count (octopus-timestamp-info-count x)))
     (if last-ts

@@ -30,6 +30,7 @@
 ;;; Code:
 
 (require 'dash)
+(require 'cl-lib)
 (require 'project)
 
 (defcustom octopus-default-git-remote-name "origin"
@@ -59,6 +60,15 @@ the error message as NULL-MESSAGE."
 
 (cl-defun octopus--pick-interactively (prompt items
                                               &optional (format-fn #'identity))
+  "Pick a single item from a list of items.
+
+This function displays a PROMPT and lets the user select an item
+from ITEMS via `completing-read'. The items can be a singleton
+list, a list with more than one items, or nil (an empty
+list). The prompt is shown if and only if there are more than one
+items.
+
+Optionally, you can specify FORMAT-FN to format each item in the completion interface."
   (declare (indent 1))
   (pcase items
     (`nil
