@@ -4,19 +4,23 @@
 :OCTOPUS_DIR: ~/octopus-examples/project-a
 :OCTOPUS_REMOTE_REPO: github:akirak/octopus-example-a
 :END:
-*** DONE Task 1
-CLOSED: [2021-04-04 Sun 17:59]
+*** TODO Task 1
 :PROPERTIES:
 :CREATED_TIME: [2021-04-04 Sun 17:59]
 :END:
-*** TODO Task 2
+*** DONE Task 2
+CLOSED: [2021-04-04 Sun 19:21]
 :PROPERTIES:
 :CREATED_TIME: [2021-04-04 Sun 17:59]
+:END:
+:LOGBOOK:
+CLOCK: [2021-04-04 Sun 18:00]--[2021-04-04 Sun 18:20] =>  0:20
 :END:
 *** Non-task note
 :PROPERTIES:
 :CREATED_TIME: [2021-04-04 Sun 17:59]
 :END:
+**** Sub note
 *** TODO Task 3
 :PROPERTIES:
 :CREATED_TIME: [2021-04-04 Sun 18:00]
