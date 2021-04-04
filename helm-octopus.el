@@ -114,18 +114,30 @@ PREDICATE is an Org Ql predicate as passed to
   (helm :project "Switch to a project: "
         :sources (helm-make-source "Projects" 'helm-octopus-project-source
                    :candidates
-                   (->> (octopus-org-project-groups predicate)
-                        (-map (lambda (it)
-                                (cons (octopus-format-candidate-multiline it)
-                                      it))))
+                   (helm-octopus--project-group-candidates predicate)
                    :persistent-action
-                   (-partial #'octopus--run-action
-                             helm-octopus-project-persistent-action)
+                   (helm-octopus--project-persistent-action)
                    :action
-                   (-map (pcase-lambda (`(,symbol . ,plist))
-                           (cons (plist-get plist :description)
-                                 (-partial #'octopus--run-action symbol)))
-                         octopus-org-project-actions))))
+                   (helm-octopus--project-action))))
+
+(defun helm-octopus--project-group-candidates (predicate)
+  "Build Helm candidates matching a PREDICATE."
+  (->> (octopus-org-project-groups predicate)
+       (-map (lambda (it)
+               (cons (octopus-format-candidate-multiline it)
+                     it)))))
+
+(defun helm-octopus--project-persistent-action ()
+  "Build a persistent action for projects."
+  (-partial #'octopus--run-action
+            helm-octopus-project-persistent-action))
+
+(defun helm-octopus--project-action ()
+  "Build a action alist for projects."
+  (-map (pcase-lambda (`(,symbol . ,plist))
+          (cons (plist-get plist :description)
+                (-partial #'octopus--run-action symbol)))
+        octopus-org-project-actions))
 
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here
