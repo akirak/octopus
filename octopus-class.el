@@ -9,11 +9,6 @@
                 :type (or null string))
    (project-remote :initarg :project-remote
                    :type (or null string))
-   (project-identity :initarg :project-identity)
-   (tags :initarg :tags
-         :type list)
-   (properties :initarg :properties
-               :type list)
    (marker :initarg :marker
            :type marker)
    (timestamp-info :initarg :timestamp-info
