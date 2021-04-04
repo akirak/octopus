@@ -98,8 +98,9 @@ argument and returns a string or nil."
          (remote (slot-value project 'project-remote))
          (dir (slot-value project 'project-dir))
          (time (->> projects
-                    (-map (when-let (info (lambda (p) (slot-value p 'timestamp-info)))
-                            (ts-unix (octopus-timestamp-info-last-ts info))))
+                    (-map (lambda (p)
+                            (when-let (info (slot-value p 'timestamp-info))
+                              (ts-unix (octopus-timestamp-info-last-ts info)))))
                     (-non-nil)
                     (-max)))
          (markers (-map (lambda (p) (slot-value p 'marker)) projects))
