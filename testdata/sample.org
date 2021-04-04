@@ -1,0 +1,57 @@
+* My projects
+** Project A: Simple project
+:PROPERTIES:
+:OCTOPUS_DIR: ~/octopus-examples/project-a
+:OCTOPUS_REMOTE_REPO: github:akirak/octopus-example-a
+:END:
+*** DONE Task 1
+CLOSED: [2021-04-04 Sun 17:59]
+:PROPERTIES:
+:CREATED_TIME: [2021-04-04 Sun 17:59]
+:END:
+*** TODO Task 2
+:PROPERTIES:
+:CREATED_TIME: [2021-04-04 Sun 17:59]
+:END:
+*** Non-task note
+:PROPERTIES:
+:CREATED_TIME: [2021-04-04 Sun 17:59]
+:END:
+*** TODO Task 3
+:PROPERTIES:
+:CREATED_TIME: [2021-04-04 Sun 18:00]
+:END:
+** Project B: Monorepo without the root directory
+:PROPERTIES:
+:OCTOPUS_REMOTE_REPO: github:akirak/octopus-example-b
+:END:
+*** Frontend
+:PROPERTIES:
+:OCTOPUS_DIR: ~/octopus-examples/project-b/frontend
+:END:
+**** TODO Task 1
+:PROPERTIES:
+:CREATED_TIME: [2021-04-04 Sun 17:59]
+:END:
+**** TODO Task 2
+:PROPERTIES:
+:CREATED_TIME: [2021-04-04 Sun 17:59]
+:END:
+**** DONE Task 3
+CLOSED: [2021-04-04 Sun 17:59]
+:PROPERTIES:
+:CREATED_TIME: [2021-04-04 Sun 17:59]
+:END:
+*** Backend
+:PROPERTIES:
+:OCTOPUS_DIR: ~/octopus-examples/project-b/backend
+:END:
+** Project C: Simple project without the directory
+:PROPERTIES:
+:OCTOPUS_REMOTE_REPO: github:akirak/octopus-example-c
+:END:
+** Project D: Simple project without the remote
+:PROPERTIES:
+:OCTOPUS_DIR: ~/octopus-examples/project-d
+:END:
+* Non-project tasks
