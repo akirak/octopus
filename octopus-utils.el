@@ -185,7 +185,7 @@ which takes MAYBE-PROMPT as an argument, which see."
 (defun octopus--format-time (time &optional current-time)
   "Format a time for human.
 
-TIME is a unix time, which you can get using `current-time'.
+TIME is a unix time, which you can get using `float-time'.
 
 Optionally, you can also specify CURRENT-TIME for computing the
 time difference. This is intended for testing."

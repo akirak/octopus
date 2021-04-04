@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "26.1") (org "9.3") (helm "3.6") (octopus "0.1") (dash "2.18"))
+;; Package-Requires: ((emacs "27.1") (org "9.3") (helm "3.6") (octopus "0.1") (dash "2.18"))
 ;; Keywords: convenience tools outlines
 ;; URL: https://github.com/akirak/octopus.el
 
@@ -138,6 +138,122 @@ PREDICATE is an Org Ql predicate as passed to
           (cons (plist-get plist :description)
                 (-partial #'octopus--run-action symbol)))
         octopus-org-project-actions))
+
+;;;; Project-scoped helm-org-ql
+
+(defvar helm-octopus-scoped-ql-root-olps)
+(defvar helm-octopus-scoped-ql-window-width)
+(defvar helm-octopus-scoped-ql-project-query)
+
+(defcustom helm-octopus-scoped-ql-sort-fn
+  #'helm-octopus-scoped-ql-default-sort
+  "Function used to sort candidates in `helm-octopus-project-scoped-ql'.
+
+This should be a 2-ary function that takes org elements as arguments.
+The result will be used by `-sort' to sort items."
+  :type 'function)
+
+(defun helm-octopus-scoped-ql-default-sort (a b)
+  "The default sorting function for `helm-octopus-project-scoped-ql'.
+
+
+A and B must be Org elements."
+  (let ((threshold 50))
+    (or (let ((time-a (unless (eql 'done (org-element-property :todo-type a))
+                        (-some->> (or (org-element-property :scheduled a)
+                                      (org-element-property :deadline a))
+                          (org-timestamp-to-time))))
+              (time-b (unless (eql 'done (org-element-property :todo-type b))
+                        (-some->> (or (org-element-property :scheduled b)
+                                      (org-element-property :deadline b))
+                          (org-timestamp-to-time)))))
+          (if (and time-a time-b)
+              (time-less-p time-a time-b)
+            (and time-a (not time-b))))
+        (let ((frec-a (org-element-property :frecency-score a))
+              (frec-b (org-element-property :frecency-score b)))
+          (if (and frec-a frec-b)
+              (or (and (>= frec-a threshold)
+                       (>= frec-b threshold)
+                       (> frec-a frec-b))
+                  (and (>= frec-a threshold)
+                       (< frec-b threshold)))
+            (and frec-a
+                 (>= frec-a threshold)))))))
+
+(defun helm-octopus-scoped-ql--candidates ()
+  "Build candidates for `helm-octopus-project-scoped-ql'."
+  (->> (octopus--ql-select `(and (ancestors ,helm-octopus-scoped-ql-project-query)
+                                 ,(org-ql--query-string-to-sexp helm-pattern))
+         :action
+         '(org-save-outline-visibility t
+            (org-show-all)
+            (font-lock-ensure (point-at-bol) (point-at-eol))
+            (let* ((olp (org-get-outline-path nil t))
+                   (local-olp (cl-some (lambda (root-olp)
+                                         (let ((n (length root-olp)))
+                                           (when (equal root-olp (-take n olp))
+                                             (-drop n olp))))
+                                       helm-octopus-scoped-ql-root-olps)))
+              (when local-olp
+                (let* ((ts-info (octopus--subtree-timestamp-info))
+                       (frecency-score (octopus-timestamp-info-frecency ts-info))
+                       (element (-> (org-element-headline-parser (org-entry-end-position))
+                                    (org-element-put-property :frecency-score frecency-score))))
+                  (cons element
+                        (cons (helm-octopus-scoped-ql--format element
+                                :local-olp local-olp
+                                :last-ts (octopus-timestamp-info-last-ts ts-info))
+                              (point-marker))))))))
+       (-non-nil)
+       (-sort (-on helm-octopus-scoped-ql-sort-fn #'car))
+       (-map #'cdr)))
+
+(cl-defun helm-octopus-scoped-ql--format (element &key local-olp last-ts)
+  "Format each candidate from the data.
+
+ELEMENT, LOCAL-OLP, and LAST-TS are passed from
+`helm-octopus-scoped-ql--candidates'."
+  (declare (indent 1))
+  (concat (substring-no-properties (org-format-outline-path
+                                    local-olp helm-octopus-scoped-ql-window-width))
+          "/"
+          (org-get-heading)
+          " "
+          (if-let (scheduled (org-element-property :scheduled element))
+              (concat " SCHEDULED:" (propertize (org-element-property :raw-value scheduled)
+                                                'face 'org-scheduled))
+            "")
+          " "
+          (if last-ts
+              (propertize (octopus--format-time (ts-unix last-ts))
+                          'face 'font-lock-comment-face)
+            "")))
+
+;;;###autoload
+(defun helm-octopus-project-scoped-ql ()
+  "Project-scoped helm-org-ql."
+  (interactive)
+  (let* ((root (if (and octopus-org-dwim-commands
+                        (derived-mode-p 'org-mode))
+                   (octopus--org-project-root)
+                 (octopus--project-root)))
+         (project-query `(project ,root)))
+    (setq helm-octopus-scoped-ql-root-olps (octopus--ql-select project-query
+                                             :action '(org-get-outline-path t t))
+          helm-octopus-scoped-ql-window-width (window-width (helm-window))
+          helm-octopus-scoped-ql-project-query project-query)
+    (helm :prompt "Org ql: "
+          :sources
+          (helm-make-source (format "Project %s: " root) 'helm-source-sync
+            :candidates #'helm-octopus-scoped-ql--candidates
+            :match #'identity
+            :fuzzy-match nil
+            :multimatch nil
+            :nohighlight t
+            :persistent-action #'helm-octopus-show-marker
+            :action #'helm-octopus-show-marker
+            :volatile t))))
 
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here
