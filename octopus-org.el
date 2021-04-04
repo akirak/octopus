@@ -77,7 +77,9 @@ The function is called with no arguments at the marker position."
   :type 'function)
 
 (defun octopus-format-headline-1 (&optional width)
-  "Default implementation of `octopus-headline-format'."
+  "Default implementation of `octopus-headline-format'.
+
+WIDTH is an optional width of the output string in characters."
   (format "%s: %s %s"
           (buffer-name)
           (org-format-outline-path
