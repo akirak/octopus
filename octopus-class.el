@@ -176,7 +176,7 @@ argument. This is intended for testing. ."
          (reducer (lambda (xs)
                     ;; If an empty list is given, the result will be nil,
                     ;; so you can handle fallback situations.
-                    (pcase (-flatten-n 1 (-non-nil xs))
+                    (pcase (-uniq (-flatten-n 1 (-non-nil xs)))
                       (`(,item) item)
                       ;; TODO: Add support for fallback
                       (`nil (cl-ecase slot
