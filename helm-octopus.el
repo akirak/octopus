@@ -186,6 +186,7 @@ A and B must be Org elements."
   (->> (octopus--ql-select `(and (ancestors ,helm-octopus-scoped-ql-project-query)
                                  ,(org-ql--query-string-to-sexp helm-pattern))
          :action
+         ;; This is unnecessary if org-ql runs `org-show-all' on every buffer.
          '(org-save-outline-visibility t
             (org-show-all)
             (font-lock-ensure (point-at-bol) (point-at-eol))
