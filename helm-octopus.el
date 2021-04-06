@@ -194,7 +194,7 @@ A and B must be Org elements."
                    (local-olp (cl-some (lambda (root-olp)
                                          (let ((n (length root-olp)))
                                            (when (equal root-olp (-take n olp))
-                                             (-drop n olp))))
+                                             (-drop (max 1 (1- n)) olp))))
                                        helm-octopus-scoped-ql-root-olps)))
               (when local-olp
                 (let* ((ts-info (octopus--subtree-timestamp-info))
