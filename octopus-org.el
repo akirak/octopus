@@ -154,14 +154,10 @@ This just calls `octopus-org-files'."
              last-ts
              (ts-count 0))
          (while (re-search-forward re end t)
-           (let* ((elm (org-timestamp-from-string (match-string 0)))
-                  (ts (make-ts
-                       :year (org-element-property :year-start elm)
-                       :month (org-element-property :month-start elm)
-                       :day (org-element-property :day-start elm)
-                       :hour (org-element-property :hour-start elm)
-                       :minute (org-element-property :minute-start elm)
-                       :second 0)))
+           (let ((ts (make-ts
+                      :unix (float-time
+                             (org-timestamp-to-time
+                              (org-timestamp-from-string (match-string 0)))))))
              (when (or (not last-ts)
                        (ts> ts last-ts))
                (setq last-ts ts))
