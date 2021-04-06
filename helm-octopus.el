@@ -197,10 +197,10 @@ A and B must be Org elements."
                                              (-drop (max 1 (1- n)) olp))))
                                        helm-octopus-scoped-ql-root-olps)))
               (when local-olp
-                (let* ((ts-info (octopus--subtree-timestamp-info))
-                       (frecency-score (octopus-timestamp-info-frecency ts-info))
-                       (element (-> (org-element-headline-parser (org-entry-end-position))
-                                    (org-element-put-property :frecency-score frecency-score))))
+                (-let* ((ts-info (octopus--entry-timestamp-info))
+                        (element (-> (org-element-headline-parser (org-entry-end-position))
+                                     (org-element-put-property
+                                      :frecency-score (octopus-timestamp-info-frecency ts-info)))))
                   (cons element
                         (cons (helm-octopus-scoped-ql--format element
                                 :local-olp local-olp
