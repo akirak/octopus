@@ -241,5 +241,10 @@ X must be an instance of `octopus-timestamp-info'."
            (min count 10))
       0)))
 
+(defun octopus--ts-max (ts-a ts-b)
+  (if (and ts-a ts-b (ts> ts-a ts-b))
+      ts-a
+    (or ts-b ts-a)))
+
 (provide 'octopus-utils)
 ;;; octopus-utils.el ends here

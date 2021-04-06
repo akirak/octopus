@@ -135,35 +135,50 @@ This just calls `octopus-org-files'."
   (org-with-wide-buffer
    ;; If the entry is closed, use its closed time as the latest
    ;; activity in the entire subtree.
-   (or (when-let (closed (and (org-entry-is-done-p)
-                              (org-entry-get nil "CLOSED")))
-         (let* ((last-ts-unix (float-time
-                               (org-timestamp-to-time
-                                (org-timestamp-from-string
-                                 closed))))
-                (time-diff (- (float-time) last-ts-unix)))
-           ;; The frecency score will be 0 if the timestamp is more
-           ;; than 7776000 seconds ago, so you don't have to count
-           ;; timestamps in that case.
-           (when (> time-diff 7776000)
-             (make-octopus-timestamp-info :last-ts (make-ts :unix last-ts-unix)
-                                          :count 0))))
-       (let ((end (save-excursion
-                    (org-end-of-subtree)))
-             (re (org-re-timestamp 'inactive))
-             last-ts
-             (ts-count 0))
-         (while (re-search-forward re end t)
-           (let ((ts (make-ts
-                      :unix (float-time
-                             (org-timestamp-to-time
-                              (org-timestamp-from-string (match-string 0)))))))
-             (when (or (not last-ts)
-                       (ts> ts last-ts))
-               (setq last-ts ts))
-             (cl-incf ts-count)))
-         (make-octopus-timestamp-info :last-ts last-ts
-                                      :count ts-count)))))
+   (or (octopus--closed-subtree-timestamp-info)
+       (octopus--collect-timestamp-info
+        (save-excursion
+          (org-end-of-subtree))))))
+
+(defun octopus--closed-subtree-timestamp-info ()
+  "If the entry is closed and old enough, return its `octopus-timestamp-info'."
+  (when-let (closed (and (org-entry-is-done-p)
+                         (org-entry-get nil "CLOSED")))
+    (let* ((last-ts-unix (float-time
+                          (org-timestamp-to-time
+                           (org-timestamp-from-string
+                            closed))))
+           (time-diff (- (float-time) last-ts-unix)))
+      ;; The frecency score will be 0 if the timestamp is more
+      ;; than 7776000 seconds ago, so you don't have to count
+      ;; timestamps in that case.
+      (when (> time-diff 7776000)
+        (make-octopus-timestamp-info :last-ts (make-ts :unix last-ts-unix)
+                                     :count 0)))))
+
+(defun octopus--collect-timestamp-info (end)
+  "Collect statistic information on timestamps till END."
+  (let ((re (org-re-timestamp 'inactive))
+        last-ts
+        (ts-count 0))
+    (while (re-search-forward re end t)
+      (let ((ts (make-ts
+                 :unix (float-time
+                        (org-timestamp-to-time
+                         (org-timestamp-from-string (match-string 0)))))))
+        (when (or (not last-ts)
+                  (ts> ts last-ts))
+          (setq last-ts ts))
+        (cl-incf ts-count)))
+    (make-octopus-timestamp-info :last-ts last-ts
+                                 :count ts-count)))
+
+(defun octopus--entry-timestamp-info ()
+  "Return statistic information on timestamps in the entry."
+  (org-with-wide-buffer
+   (or (octopus--closed-subtree-timestamp-info)
+       (octopus--collect-timestamp-info
+        (org-entry-end-position)))))
 
 (provide 'octopus-org)
 ;;; octopus-org.el ends here
