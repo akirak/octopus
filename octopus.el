@@ -423,5 +423,81 @@ KWD."
            (not (todo "DONE"))
            (ancestors (any-project))))))
 
+;;;; Generic actions
+
+(defcustom octopus-org-project-actions
+  '((browse-dir
+     :description "Browse the project directory"
+     :slot project-dir
+     :verify file-directory-p
+     :dispatch octopus--browse-dir)
+    (display-org-marker
+     :description "Display the Org subtree"
+     :slot marker
+     :dispatch octopus--display-org-marker)
+    (todo-list
+     :description "Show a todo list"
+     :slot project-dir
+     :verify file-directory-p
+     :dispatch octopus--project-todo-list)
+    (find-file
+     :description "Find a file in the project"
+     :slot project-dir
+     :verify file-directory-p
+     :dispatch
+     (lambda (dir)
+       (let ((default-directory dir))
+         (project-find-file)))))
+  "Alist of actions."
+  :group 'octopus
+  :type '(alist :key-type symbol
+                :value-type plist))
+
+(cl-defun octopus--run-action (action project &key dispatch)
+  "Invoke an ACTION on PROJECT.
+
+ACTION should be a symbol in `octopus-org-project-actions'.
+
+DISPATCH can be a function that takes the data as an
+argument. This is intended for testing. ."
+  (let ((plist (or (alist-get action octopus-org-project-actions)
+                   (error "Undefined entry %s in octopus-org-project-actions" action))))
+    (cl-labels
+        ((reduce-data (slot xs)
+                      ;; If an empty list is given, the result will be nil,
+                      ;; so you can handle fallback situations.
+                      (pcase (-uniq (-flatten-n 1 (-non-nil xs)))
+                        (`(,item) item)
+                        ;; TODO: Add support for fallback
+                        (`nil (cl-ecase slot
+                                (project-dir
+                                 (octopus--find-repository-by-remote-url
+                                  (get-data 'project-remote)))
+                                (project-remote
+                                 (error "No remote"))))
+                        (xs (cl-ecase slot
+                              (project-dir
+                               (octopus--pick-interactively "Project directory: " xs))
+                              (project-remote
+                               (error "TODO: Not implemented"))
+                              (marker
+                               (octopus--select-org-marker
+                                "Select a subtree: " xs
+                                :name "Org subtrees for the project"))))))
+         (get-data (slot)
+                   (cl-etypecase project
+                     (octopus-org-project-class
+                      (slot-value project slot))
+                     (octopus-org-project-group-class
+                      (->> (oref project projects)
+                           (-map (lambda (project) (slot-value project slot)))
+                           (reduce-data slot))))))
+      (let ((data (get-data (plist-get plist :slot))))
+        (when-let (verify (plist-get plist :verify))
+          (unless (funcall verify data)
+            (error "Test failed on the value of %s: %s returned non-nil on %s"
+                   slot verify data)))
+        (funcall (or dispatch (plist-get plist :dispatch)) data)))))
+
 (provide 'octopus)
 ;;; octopus.el ends here
