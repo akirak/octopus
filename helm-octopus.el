@@ -235,10 +235,11 @@ ELEMENT, LOCAL-OLP, and LAST-TS are passed from
 (defun helm-octopus-project-scoped-ql ()
   "Project-scoped helm-org-ql."
   (interactive)
-  (let* ((root (if (and octopus-org-dwim-commands
-                        (derived-mode-p 'org-mode))
-                   (octopus--org-project-root)
-                 (octopus--project-root)))
+  (let* ((root (or (and octopus-org-dwim-commands
+                        (derived-mode-p 'org-mode)
+                        (octopus--org-project-root))
+                   (octopus--project-root)
+                   (error "Cannot find a root")))
          (project-query `(project ,root)))
     (setq helm-octopus-scoped-ql-root-olps (octopus--ql-select project-query
                                              :action '(org-get-outline-path t t))
