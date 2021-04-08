@@ -263,30 +263,39 @@ from `helm-octopus-scoped-ql--candidates'."
             "")))
 
 ;;;###autoload
-(defun helm-octopus-project-scoped-ql ()
-  "Project-scoped helm-org-ql."
-  (interactive)
-  (let* ((root (or (and octopus-org-dwim-commands
-                        (derived-mode-p 'org-mode)
-                        (octopus--org-project-root))
-                   (octopus--project-root)
-                   (error "Cannot find a root")))
-         (project-query `(project ,root)))
-    (setq helm-octopus-scoped-ql-root-olps (octopus--ql-select project-query
-                                             :action '(org-get-outline-path t t))
-          helm-octopus-scoped-ql-window-width (window-width (helm-window))
-          helm-octopus-scoped-ql-project-query project-query)
-    (helm :prompt "Org ql: "
-          :sources
-          (helm-make-source (format "Project %s: " root) 'helm-source-sync
-            :candidates #'helm-octopus-scoped-ql--candidates
-            :match #'identity
-            :fuzzy-match nil
-            :multimatch nil
-            :nohighlight t
-            :persistent-action #'helm-octopus-show-marker
-            :action #'helm-octopus-show-marker
-            :volatile t))))
+(defun helm-octopus-project-scoped-ql (&optional arg)
+  "Project-scoped helm-org-ql.
+
+If two prefix arguments are given as ARG, "
+  (interactive "P")
+  (pcase arg
+    ('(16)
+     (helm-octopus-global-ql))
+    (_
+     (let* ((root (or (and octopus-org-dwim-commands
+                           (derived-mode-p 'org-mode)
+                           (octopus--org-project-root))
+                      (octopus--project-root)
+                      (error "Cannot find a root")))
+            (project-query `(project ,root)))
+       (setq helm-octopus-scoped-ql-root-olps (octopus--ql-select project-query
+                                                :action '(org-get-outline-path t t))
+             helm-octopus-scoped-ql-window-width (window-width (helm-window))
+             helm-octopus-scoped-ql-project-query project-query)
+       (helm :prompt "Org ql: "
+             :sources
+             (helm-make-source (format "Project %s: " root) 'helm-source-sync
+               :candidates (lambda ()
+                             (helm-octopus--entry-candidates
+                              `(and (ancestors ,helm-octopus-scoped-ql-project-query)
+                                    ,(org-ql--query-string-to-sexp helm-pattern))))
+               :match #'identity
+               :fuzzy-match nil
+               :multimatch nil
+               :nohighlight t
+               :persistent-action #'helm-octopus-show-marker
+               :action #'helm-octopus-show-marker
+               :volatile t))))))
 
 (defvar helm-octopus-global-ql-source
   (helm-make-source "Global" 'helm-source-sync
