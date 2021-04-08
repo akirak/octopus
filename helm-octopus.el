@@ -210,13 +210,44 @@ A and B must be Org elements."
        (-sort (-on helm-octopus-scoped-ql-sort-fn #'car))
        (-map #'cdr)))
 
-(cl-defun helm-octopus-scoped-ql--format (element &key local-olp last-ts)
+(defun helm-octopus---global-candidates ()
+  "Build candidates for `helm-octopus-global-ql'."
+  (->> (octopus--ql-select (or (org-ql--query-string-to-sexp helm-pattern)
+                               ;; It may be possible to allow
+                               ;; customization of the default query.
+                               '(or (todo)
+                                    (done)
+                                    (planning)))
+         :action
+         '(org-save-outline-visibility t
+            (org-show-all)
+            (font-lock-ensure (point-at-bol) (point-at-eol))
+            (let* ((olp (org-get-outline-path nil t))
+                   (ts-info (octopus--entry-timestamp-info))
+                   (element (-> (org-element-headline-parser (org-entry-end-position))
+                                (org-element-put-property
+                                 :frecency-score (octopus-timestamp-info-frecency ts-info)))))
+              (cons element
+                    (cons (helm-octopus-scoped-ql--format element
+                            :include-buffer-name t
+                            :local-olp olp
+                            :last-ts (octopus-timestamp-info-last-ts ts-info))
+                          (point-marker))))))
+       (-non-nil)
+       (-sort (-on helm-octopus-scoped-ql-sort-fn #'car))
+       (-map #'cdr)))
+
+(cl-defun helm-octopus-scoped-ql--format (element &key local-olp last-ts
+                                                  include-buffer-name)
   "Format each candidate from the data.
 
-ELEMENT, LOCAL-OLP, and LAST-TS are passed from
-`helm-octopus-scoped-ql--candidates'."
+ELEMENT, LOCAL-OLP, LAST-TS, and INCLUDE-BUFFER-NAME are passed
+from `helm-octopus-scoped-ql--candidates'."
   (declare (indent 1))
-  (concat (substring-no-properties (org-format-outline-path
+  (concat (if include-buffer-name
+              (concat (buffer-name) ": ")
+            "")
+          (substring-no-properties (org-format-outline-path
                                     local-olp helm-octopus-scoped-ql-window-width))
           "/"
           (org-get-heading)
@@ -256,6 +287,25 @@ ELEMENT, LOCAL-OLP, and LAST-TS are passed from
             :persistent-action #'helm-octopus-show-marker
             :action #'helm-octopus-show-marker
             :volatile t))))
+
+(defvar helm-octopus-global-ql-source
+  (helm-make-source "Global" 'helm-source-sync
+    :candidates #'helm-octopus---global-candidates
+    :match #'identity
+    :fuzzy-match nil
+    :multimatch nil
+    :nohighlight t
+    :persistent-action #'helm-octopus-show-marker
+    :action #'helm-octopus-show-marker
+    :volatile t))
+
+;;;###autoload
+(defun helm-octopus-global-ql ()
+  "Org-ql from all entries in `octopus-org-files'."
+  (interactive)
+  (setq helm-octopus-scoped-ql-window-width (window-width (helm-window)))
+  (helm :prompt "Org ql: "
+        :sources 'helm-octopus-global-ql-source))
 
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here

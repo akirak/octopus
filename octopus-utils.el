@@ -236,7 +236,7 @@ time difference. This is intended for testing."
 X must be an instance of `octopus-timestamp-info'."
   (let ((last-ts (octopus-timestamp-info-last-ts x))
         (count (octopus-timestamp-info-count x)))
-    (if last-ts
+    (if (and last-ts (> count 0))
         (/ (* count (octopus--frecency-timestamp-score (ts-unix last-ts)))
            (min count 10))
       0)))
