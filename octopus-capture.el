@@ -215,9 +215,9 @@ You should specify on of those."
                      :remote (equal current-prefix-arg '(16))
                      :root (equal current-prefix-arg '(4))))
   (let ((location (cond
-                   ((and root (not (stringp root)))
+                   ((eql root t)
                     (list :root (octopus-select-project-dir-in-org)))
-                   ((and remote (not (stringp remote)))
+                   ((eql remote t)
                     (list :remote (octopus-select-project-remote-repo-in-org)))
                    ((and octopus-org-dwim-commands
                          (derived-mode-p 'org-mode))
