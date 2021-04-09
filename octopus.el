@@ -262,7 +262,7 @@ PREDICATE is an extra filter passed to `org-ql'."
              '(any-project))))
     (pcase octopus-switch-project-select-interface
       (`helm
-       (helm-octopus-project p))
+       (helm-octopus-project :predicate p))
       ((pred functionp)
        (octopus--browse-dir
         (funcall octopus-switch-project-select-interface

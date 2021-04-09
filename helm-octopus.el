@@ -105,20 +105,23 @@ This can be a symbol in `octopus-org-project-actions'."
   ((multiline :initform t)))
 
 ;;;###autoload
-(defun helm-octopus-project (predicate)
+(cl-defun helm-octopus-project (&key predicate action)
   "Switch to a project directory.
 
 PREDICATE is an Org Ql predicate as passed to
-`octopus-org-project-groups'."
-  (interactive (list '(any-project)))
+`octopus-org-project-groups'.
+
+Optionally, you can specify an ACTION."
+  (interactive)
   (helm :project "Switch to a project: "
         :sources (helm-make-source "Projects" 'helm-octopus-project-source
                    :candidates
-                   (helm-octopus--project-group-candidates predicate)
+                   (helm-octopus--project-group-candidates
+                    (or predicate '(any-project)))
                    :persistent-action
                    (helm-octopus--project-persistent-action)
                    :action
-                   (helm-octopus--project-action))))
+                   (or action (helm-octopus--project-action)))))
 
 (defun helm-octopus--project-group-candidates (predicate)
   "Build Helm candidates matching a PREDICATE."
@@ -266,17 +269,17 @@ from `helm-octopus-scoped-ql--candidates'."
 (defun helm-octopus-project-scoped-ql (&optional arg)
   "Project-scoped helm-org-ql.
 
-If two prefix arguments are given as ARG, "
+If a single prefix argument is given, it lets the user select a project.
+
+If two prefix arguments are given as ARG,
+`helm-octopus-global-ql' is run.
+
+If a directory is given as the argument, it will be used as the
+project root."
   (interactive "P")
   (pcase arg
-    ('(16)
-     (helm-octopus-global-ql))
-    (_
-     (let* ((root (or (and octopus-org-dwim-commands
-                           (derived-mode-p 'org-mode)
-                           (octopus--org-project-root))
-                      (octopus--project-root)
-                      (error "Cannot find a root")))
+    ((pred stringp)
+     (let* ((root arg)
             (project-query `(project ,root)))
        (setq helm-octopus-scoped-ql-root-olps (octopus--ql-select project-query
                                                 :action '(org-get-outline-path t t))
@@ -295,7 +298,17 @@ If two prefix arguments are given as ARG, "
                :nohighlight t
                :persistent-action #'helm-octopus-show-marker
                :action #'helm-octopus-show-marker
-               :volatile t))))))
+               :volatile t))))
+    ('(16)
+     (helm-octopus-global-ql))
+    ('(4)
+     (helm-octopus-project :action #'helm-octopus-project-scoped-ql))
+    (_
+     (helm-octopus-project-scoped-ql (or (and octopus-org-dwim-commands
+                                              (derived-mode-p 'org-mode)
+                                              (octopus--org-project-root))
+                                         (octopus--project-root)
+                                         (error "Cannot find a root"))))))
 
 (defvar helm-octopus-global-ql-source
   (helm-make-source "Global" 'helm-source-sync
