@@ -231,8 +231,8 @@ A and B must be Org elements."
 
 (defun helm-octopus-scoped-ql--candidates ()
   "Build candidates for `helm-octopus-project-scoped-ql'."
-  (->> (octopus--ql-select `(and (ancestors ,helm-octopus-scoped-ql-project-query)
-                                 ,(org-ql--query-string-to-sexp helm-pattern))
+  (->> (octopus--ql-select `(default-and (ancestors ,helm-octopus-scoped-ql-project-query)
+                              ,(org-ql--query-string-to-sexp helm-pattern))
          :action
          ;; This is unnecessary if org-ql runs `org-show-all' on every buffer.
          '(org-save-outline-visibility t
@@ -260,12 +260,7 @@ A and B must be Org elements."
 
 (defun helm-octopus---global-candidates ()
   "Build candidates for `helm-octopus-global-ql'."
-  (->> (octopus--ql-select (or (org-ql--query-string-to-sexp helm-pattern)
-                               ;; It may be possible to allow
-                               ;; customization of the default query.
-                               '(or (todo)
-                                    (done)
-                                    (planning)))
+  (->> (octopus--ql-select `(default-and ,(org-ql--query-string-to-sexp helm-pattern))
          :action
          '(org-save-outline-visibility t
             (org-show-all)
