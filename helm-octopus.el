@@ -61,6 +61,12 @@
   (org-with-point-at marker
     (org-clock-in)))
 
+(defun helm-octopus-mark-as-done (_marker)
+  "Set the marked Helm candidates as done."
+  (dolist (marker (helm-marked-candidates))
+    (org-with-point-at marker
+      (org-todo 'done))))
+
 (cl-defun helm-octopus--org-marker-sync-source (name markers
                                                      &key action)
   "Build a sync Helm source for Org markers.
@@ -158,7 +164,9 @@ Optionally, you can specify an ACTION."
    "Display"
    #'helm-octopus-show-marker
    "Clock in"
-   #'helm-octopus-clock-in-marker)
+   #'helm-octopus-clock-in-marker
+   "Mark as done"
+   #'helm-octopus-mark-as-done)
   "Alist of actions in entry sources.
 
 This is used in `helm-octopus-project-scoped-ql' and
