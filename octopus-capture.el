@@ -216,7 +216,7 @@ You should specify on of those."
                      :root (equal current-prefix-arg '(4))))
   (let ((location (cond
                    ((eql root t)
-                    (list :root (octopus-select-project-dir-in-org)))
+                    (list :root (octopus--select-project-dir)))
                    ((eql remote t)
                     (list :remote (octopus-select-project-remote-repo-in-org)))
                    ((and octopus-org-dwim-commands

@@ -264,17 +264,20 @@ PREDICATE is an extra filter passed to `org-ql'."
       (`helm
        (helm-octopus-project :predicate p))
       ((pred functionp)
-       (octopus--browse-dir
-        (funcall octopus-switch-project-select-interface
-                 "Project root: "
-                 (->> (octopus-org-project-groups p)
-                      (-map (lambda (group)
-                              (let ((project (car (oref group projects))))
-                                (or (oref project project-dir)
-                                    (oref project project-remote)))))))))
+       (octopus--browse-dir (octopus--select-project-dir p)))
       (_
        (user-error "Invalid value for octopus-switch-project-select-interface: %s"
                    octopus-switch-project-select-interface)))))
+
+(cl-defun octopus--select-project-dir (&optional (predicate '(any-project)))
+  ""
+  (funcall octopus-switch-project-select-interface
+           "Project root: "
+           (->> (octopus-org-project-groups predicate)
+                (-map (lambda (group)
+                        (let ((project (car (oref group projects))))
+                          (or (oref project project-dir)
+                              (oref project project-remote))))))))
 
 ;;;###autoload
 (defun octopus-switch-project-by-org-category (category)
@@ -460,8 +463,10 @@ ACTION should be a symbol in `octopus-org-project-actions'.
 
 DISPATCH can be a function that takes the data as an
 argument. This is intended for testing. ."
-  (let ((plist (or (alist-get action octopus-org-project-actions)
-                   (error "Undefined entry %s in octopus-org-project-actions" action))))
+  (let ((plist (cl-etypecase action
+                 (list action)
+                 (symbol (or (alist-get action octopus-org-project-actions)
+                             (error "Undefined entry %s in octopus-org-project-actions" action))))))
     (cl-labels
         ((reduce-data (slot xs)
                       ;; If an empty list is given, the result will be nil,
