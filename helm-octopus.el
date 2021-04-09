@@ -286,6 +286,20 @@ from `helm-octopus-scoped-ql--candidates'."
                           'face 'font-lock-comment-face)
             "")))
 
+(defvar helm-octopus-project-scoped-ql-source
+  (helm-make-source "Project-scoped entries" 'helm-source-sync
+    :candidates (lambda ()
+                  (helm-octopus--entry-candidates
+                   `(and (ancestors ,helm-octopus-scoped-ql-project-query)
+                         ,(org-ql--query-string-to-sexp helm-pattern))))
+    :match #'identity
+    :fuzzy-match nil
+    :multimatch nil
+    :nohighlight t
+    :persistent-action #'helm-octopus-show-marker
+    :action helm-octopus-entry-action
+    :volatile t))
+
 ;;;###autoload
 (defun helm-octopus-project-scoped-ql (&optional arg)
   "Project-scoped helm-org-ql.
@@ -306,20 +320,9 @@ project root."
                                                 :action '(org-get-outline-path t t))
              helm-octopus-scoped-ql-window-width (window-width (helm-window))
              helm-octopus-scoped-ql-project-query project-query)
-       (helm :prompt "Org ql: "
+       (helm :prompt (format "Org ql [project: %s]: " (abbreviate-file-name root))
              :sources
-             (helm-make-source (format "Project %s: " root) 'helm-source-sync
-               :candidates (lambda ()
-                             (helm-octopus--entry-candidates
-                              `(and (ancestors ,helm-octopus-scoped-ql-project-query)
-                                    ,(org-ql--query-string-to-sexp helm-pattern))))
-               :match #'identity
-               :fuzzy-match nil
-               :multimatch nil
-               :nohighlight t
-               :persistent-action #'helm-octopus-show-marker
-               :action helm-octopus-entry-action
-               :volatile t))))
+             'helm-octopus-project-scoped-ql-source)))
     ('(16)
      (helm-octopus-global-ql))
     ('(4)
