@@ -185,20 +185,36 @@ This should be a 2-ary function that takes org elements as arguments.
 The result will be used by `-sort' to sort items."
   :type 'function)
 
+(defcustom helm-octopus-entry-snooze-days 3
+  "The span within which to consider in sorting.
+
+`helm-octopus-scoped-ql-default-sort' prioritizes unfinished
+entries with scheduled or deadline timestamps. Entries with those
+timestamps are shown at top in the selection interface.
+
+If this variable is set to a number, timestamps in N days or
+later will be ignored, so they won't be shown at top."
+  :type '(choice nil number))
+
 (defun helm-octopus-scoped-ql-default-sort (a b)
   "The default sorting function for `helm-octopus-project-scoped-ql'.
 
 
 A and B must be Org elements."
-  (let ((threshold 50))
+  (let ((threshold 50)
+        (time-limit (when helm-octopus-entry-snooze-days
+                      (ts-unix (octopus-ts-midnight-in-n-days
+                                helm-octopus-entry-snooze-days)))))
     (or (let ((time-a (unless (eql 'done (org-element-property :todo-type a))
                         (-some->> (or (org-element-property :scheduled a)
                                       (org-element-property :deadline a))
-                          (org-timestamp-to-time))))
+                          (org-timestamp-to-time)
+                          (octopus-time-ignore-later-than time-limit))))
               (time-b (unless (eql 'done (org-element-property :todo-type b))
                         (-some->> (or (org-element-property :scheduled b)
                                       (org-element-property :deadline b))
-                          (org-timestamp-to-time)))))
+                          (org-timestamp-to-time)
+                          (octopus-time-ignore-later-than time-limit)))))
           (if (and time-a time-b)
               (time-less-p time-a time-b)
             (and time-a (not time-b))))

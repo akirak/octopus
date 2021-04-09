@@ -241,5 +241,14 @@ X must be an instance of `octopus-timestamp-info'."
            (min count 10))
       0)))
 
+(defun octopus-ts-midnight-in-n-days (n)
+  "Return the midnight in N days later."
+  (ts-adjust 'day 1 (ts-apply :hour 0 :minute 0 :second 0 (ts-now))))
+
+(defun octopus-time-ignore-later-than (a b)
+  "If A is earlier than B, returns nil. Otherwise, returns b."
+  (unless (and a (time-less-p a b))
+    b))
+
 (provide 'octopus-utils)
 ;;; octopus-utils.el ends here
