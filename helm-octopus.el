@@ -302,7 +302,7 @@ from `helm-octopus-scoped-ql--candidates'."
     :multimatch nil
     :nohighlight t
     :persistent-action #'helm-octopus-show-marker
-    :action helm-octopus-entry-action
+    :action 'helm-octopus-entry-action
     :volatile t))
 
 ;;;###autoload
