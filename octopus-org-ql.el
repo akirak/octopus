@@ -40,10 +40,10 @@
 
 ;;;; Custom variables
 
-(defcustom octopus-org-ql-default-predicate
-  '(not (tags "ARCHIVE"))
-  "Default `org-ql' predicate for various commands."
-  :type 'sexp)
+(defcustom octopus-org-ql-default-predicates
+  '((not (tags "ARCHIVE")))
+  "List of `org-ql' predicates applied to various commands."
+  :type '(repeat sexp))
 
 ;;;; Completing-read like interface for Org markers
 
@@ -93,8 +93,8 @@ completion interface."
    exp
    '((default-and
        . (lambda (&rest args)
-           (if octopus-org-ql-default-predicate
-               `(and ,octopus-org-ql-default-predicate
+           (if octopus-org-ql-default-predicates
+               `(and ,@octopus-org-ql-default-predicates
                      ,@args)
              `(and ,@args))))
      (project-dir-property
