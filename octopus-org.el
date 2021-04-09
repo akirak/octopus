@@ -158,20 +158,23 @@ This just calls `octopus-org-files'."
 
 (defun octopus--collect-timestamp-info (end)
   "Collect statistic information on timestamps till END."
-  (let ((re (org-re-timestamp 'inactive))
-        last-ts
-        (ts-count 0))
-    (while (re-search-forward re end t)
-      (let ((ts (make-ts
-                 :unix (float-time
-                        (org-timestamp-to-time
-                         (org-timestamp-from-string (match-string 0)))))))
-        (when (or (not last-ts)
-                  (ts> ts last-ts))
-          (setq last-ts ts))
-        (cl-incf ts-count)))
-    (make-octopus-timestamp-info :last-ts last-ts
-                                 :count ts-count)))
+  (if (> (point) end)
+      (make-octopus-timestamp-info :last-ts nil
+                                   :count 0)
+    (let ((re (org-re-timestamp 'inactive))
+          last-ts
+          (ts-count 0))
+      (while (re-search-forward re end t)
+        (let ((ts (make-ts
+                   :unix (float-time
+                          (org-timestamp-to-time
+                           (org-timestamp-from-string (match-string 0)))))))
+          (when (or (not last-ts)
+                    (ts> ts last-ts))
+            (setq last-ts ts))
+          (cl-incf ts-count)))
+      (make-octopus-timestamp-info :last-ts last-ts
+                                   :count ts-count))))
 
 (defun octopus--entry-timestamp-info ()
   "Return statistic information on timestamps in the entry."
