@@ -56,6 +56,11 @@
       (org-cycle)))
   (org-narrow-to-subtree))
 
+(defun helm-octopus-clock-in-marker (marker)
+  "Clock in to the MARKER."
+  (org-with-point-at marker
+    (org-clock-in)))
+
 (cl-defun helm-octopus--org-marker-sync-source (name markers
                                                      &key action)
   "Build a sync Helm source for Org markers.
@@ -147,6 +152,22 @@ Optionally, you can specify an ACTION."
 (defvar helm-octopus-scoped-ql-root-olps)
 (defvar helm-octopus-scoped-ql-window-width)
 (defvar helm-octopus-scoped-ql-project-query)
+
+(defcustom helm-octopus-entry-action
+  (helm-make-actions
+   "Display"
+   #'helm-octopus-show-marker
+   "Clock in"
+   #'helm-octopus-clock-in-marker)
+  "Alist of actions in entry sources.
+
+This is used in `helm-octopus-project-scoped-ql' and
+`helm-octopus-global-ql'.
+
+Note that those commands use a different action for the
+persistent action."
+  :type '(alist :key-type string
+                :value-type function))
 
 (defcustom helm-octopus-scoped-ql-sort-fn
   #'helm-octopus-scoped-ql-default-sort
@@ -297,7 +318,7 @@ project root."
                :multimatch nil
                :nohighlight t
                :persistent-action #'helm-octopus-show-marker
-               :action #'helm-octopus-show-marker
+               :action helm-octopus-entry-action
                :volatile t))))
     ('(16)
      (helm-octopus-global-ql))
@@ -318,7 +339,7 @@ project root."
     :multimatch nil
     :nohighlight t
     :persistent-action #'helm-octopus-show-marker
-    :action #'helm-octopus-show-marker
+    :action 'helm-octopus-entry-action
     :volatile t))
 
 ;;;###autoload
