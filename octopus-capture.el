@@ -216,6 +216,8 @@ You should specify on of those."
                      :root (equal current-prefix-arg '(4))))
   (let ((location (cond
                    ((eql root t)
+                    ;; FIXME: Implement an alternative function for selecting a directory
+                    ;; The function used here is undefined now.
                     (list :root (octopus-select-project-dir-in-org)))
                    ((eql remote t)
                     (list :remote (octopus-select-project-remote-repo-in-org)))
