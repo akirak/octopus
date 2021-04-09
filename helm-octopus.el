@@ -288,10 +288,7 @@ from `helm-octopus-scoped-ql--candidates'."
 
 (defvar helm-octopus-project-scoped-ql-source
   (helm-make-source "Project-scoped entries" 'helm-source-sync
-    :candidates (lambda ()
-                  (helm-octopus--entry-candidates
-                   `(and (ancestors ,helm-octopus-scoped-ql-project-query)
-                         ,(org-ql--query-string-to-sexp helm-pattern))))
+    :candidates #'helm-octopus-scoped-ql--candidates
     :match #'identity
     :fuzzy-match nil
     :multimatch nil
