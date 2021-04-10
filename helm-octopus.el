@@ -342,7 +342,11 @@ project root."
     ('(16)
      (helm-octopus-global-ql))
     ('(4)
-     (helm-octopus-project :action #'helm-octopus-project-scoped-ql))
+     (helm-octopus-project
+      :action (-partial #'octopus--run-action
+                        (list :slot 'project-dir
+                              :verify #'file-directory-p
+                              :dispatch #'helm-octopus-project-scoped-ql))))
     (_
      (helm-octopus-project-scoped-ql (or (and octopus-org-dwim-commands
                                               (derived-mode-p 'org-mode)
