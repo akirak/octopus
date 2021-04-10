@@ -460,8 +460,10 @@ ACTION should be a symbol in `octopus-org-project-actions'.
 
 DISPATCH can be a function that takes the data as an
 argument. This is intended for testing. ."
-  (let ((plist (or (alist-get action octopus-org-project-actions)
-                   (error "Undefined entry %s in octopus-org-project-actions" action))))
+  (let ((plist (cl-etypecase action
+                 (list action)
+                 (symbol (or (alist-get action octopus-org-project-actions)
+                             (error "Undefined entry %s in octopus-org-project-actions" action))))))
     (cl-labels
         ((reduce-data (slot xs)
                       ;; If an empty list is given, the result will be nil,
