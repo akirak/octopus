@@ -68,6 +68,7 @@ configuration."
 (cl-defun octopus-entry-capture-template (&key todo
                                                heading
                                                tag-prompt
+                                               properties
                                                body)
   "Returns a template string from the given arguments.
 
@@ -77,6 +78,9 @@ HEADING will be the heading of the generated template.
 
 If TAG-PROMPT is non-nil, the user will be asked for a tag.
 
+PROPERTIES can be an alist of properties. Both the key and value
+of each entry must be a string.
+
 BODY is the entry body.
 
 See `org-capture-templates' for the syntax."
@@ -85,8 +89,16 @@ See `org-capture-templates' for the syntax."
               " %^g"
             "")
           "\n"
-          (if octopus-capture-timestamp
-              ":PROPERTIES:\n:CREATED_TIME: %U\n:END:\n"
+          (if (or octopus-capture-timestamp properties)
+              (concat ":PROPERTIES:\n"
+                      (if octopus-capture-timestamp
+                          ":CREATED_TIME: %U\n"
+                        "")
+                      (mapconcat (pcase-lambda (`(,key . ,value))
+                                   (format ":%s: %s\n" key value))
+                                 properties
+                                 "")
+                      ":END:\n")
             "")
           (or body "")))
 
@@ -96,7 +108,7 @@ See `org-capture-templates' for the syntax."
                                       :heading "%?"
                                       :tag-prompt t))
     (project
-     ,(octopus-entry-capture-template :heading "%?"))
+     (function octopus-capture-project-template))
     (current-with-input
      ,(octopus-entry-capture-template
        :todo "STARTED"
@@ -105,6 +117,29 @@ See `org-capture-templates' for the syntax."
   "Alist of todo capture templates."
   :type '(alist :key-type symbol
                 :value-type (cons string plist)))
+
+(defun octopus-capture-project-template ()
+  "Construct the template body for `octopus-capture-project'.
+
+This won't take effect unless you put the function in
+`octopus-capture-template-alist' for capturing projects."
+  (let ((root (-some->> (project-current)
+                (project-root)))
+        (vc-root (vc-root-dir))
+        (remote (octopus--abbreviate-remote-url default-directory)))
+    (octopus-entry-capture-template
+     :todo nil
+     :heading "%?"
+     :properties
+     (->> (list (cons "OCTOPUS_REMOTE_REPO"
+                      (when (and root vc-root
+                                 (file-equal-p root vc-root))
+                        remote))
+                (cons "OCTOPUS_DIR"
+                      (when root
+                        (abbreviate-file-name root))))
+          (-filter #'cdr))
+     :body "")))
 
 (defun octopus--capture-entry-to-marker (marker template &rest props)
   "Capture an entry to a given marker.
