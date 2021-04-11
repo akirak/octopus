@@ -120,26 +120,20 @@ is a plist as in each entry in `org-capture-templates'."
                              ,template ,@props)))
     (org-capture)))
 
-;;;###autoload
-(defun octopus-capture-project (&optional arg)
-  "Create an Org subtree for the current project.
+(defcustom octopus-capture-project-location
+  (list 'function (lambda () (org-refile '(4))))
+  "`org-capture' location of `octopus-capture-project' command."
+  :type 'sexp)
 
-If two universal prefixes are given as ARG, it displays a project
-subtree instead."
-  (interactive "P")
-  (pcase arg
-    (`(16)
-     (octopus-project-org-root t))
-    (_
-     (let ((marker (--> (octopus--ql-select '(default-and (children (any-project)))
-                          :action '(prog1 (point-marker)
-                                     (org-end-of-subtree)))
-                     (octopus--select-org-marker
-                      "Project context: " it
-                      :name "Parents of existing project subtrees"))))
-       (apply #'octopus--capture-entry-to-marker
-              marker
-              (alist-get 'project octopus-capture-template-alist))))))
+;;;###autoload
+(defun octopus-capture-project ()
+  "Create an Org subtree for the current project."
+  (interactive)
+  (let ((org-capture-entry `("_" "octopus-project"
+                             entry
+                             ,octopus-capture-project-location
+                             ,@(alist-get 'project octopus-capture-template-alist))))
+    (org-capture)))
 
 (cl-defun octopus--todo-capture-location (&key root remote)
   "Return a marker in which todo entries should be created.
