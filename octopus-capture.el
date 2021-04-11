@@ -118,6 +118,18 @@ See `org-capture-templates' for the syntax."
   :type '(alist :key-type symbol
                 :value-type (cons string plist)))
 
+(defcustom octopus-capture-project-language-fn nil
+  "Function to retrieve languages of a project.
+
+If this variable is set to a function, it is used to produce the
+value of LANGUAGE property in an entry created by
+`octopus-capture-project-template' function. The function must
+take a directory as an argument and return a string.
+
+If it is nil or the function returns nil, the captured entry
+won't get a LANGUAGE property by default."
+  :type 'function)
+
 (defun octopus-capture-project-template ()
   "Construct the template body for `octopus-capture-project'.
 
@@ -137,7 +149,11 @@ This won't take effect unless you put the function in
                         remote))
                 (cons "OCTOPUS_DIR"
                       (when root
-                        (abbreviate-file-name root))))
+                        (abbreviate-file-name root)))
+                (cons "LANGUAGE"
+                      (when (and root
+                                 (fboundp octopus-capture-project-language-fn))
+                        (funcall octopus-capture-project-language-fn root))))
           (-filter #'cdr))
      :body "")))
 
