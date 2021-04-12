@@ -207,7 +207,8 @@ This function is intended for internal use."
                         :action #'point-marker)
                       (octopus--ql-select
                           `(default-and (ancestors ,subtree-pred)
-                             (children (todo)))
+                             (children (or (todo)
+                                           (done))))
                         :action `(prog1 (point-marker)
                                    (org-end-of-subtree)))
                       ;; Otherwise, create todos directly below the project subtree
