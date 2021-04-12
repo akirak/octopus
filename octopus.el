@@ -60,7 +60,8 @@ An example is `magit-list-repos'."
   (funcall octopus-repo-list-fn))
 
 (defcustom octopus-browse-dir-fn
-  #'magit-status
+  (lambda (dir)
+    (magit-status (locate-dominating-file dir ".git")))
   "Function used to open a repository.
 
 This should be a function that takes a repository directory and
