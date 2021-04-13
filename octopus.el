@@ -495,7 +495,8 @@ argument. This is intended for testing. ."
                       (->> (oref project projects)
                            (-map (lambda (project) (slot-value project slot)))
                            (reduce-data slot))))))
-      (let ((data (get-data (plist-get plist :slot))))
+      (let* ((slot (plist-get plist :slot))
+             (data (get-data slot)))
         (when-let (verify (plist-get plist :verify))
           (unless (funcall verify data)
             (error "Test failed on the value of %s: %s returned non-nil on %s"
