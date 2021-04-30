@@ -229,6 +229,10 @@ A and B must be Org elements."
             (and frec-a
                  (>= frec-a threshold)))))))
 
+(defcustom helm-octopus-dim-blocked-tasks t
+  "Whether to dim candidates of blocked tasks."
+  :type 'boolean)
+
 (defun helm-octopus-scoped-ql--candidates ()
   "Build candidates for `helm-octopus-project-scoped-ql'."
   (->> (octopus--ql-select `(default-and (ancestors ,helm-octopus-scoped-ql-project-query)
@@ -239,6 +243,8 @@ A and B must be Org elements."
             (org-show-all)
             (font-lock-ensure (point-at-bol) (point-at-eol))
             (let* ((olp (org-get-outline-path nil t))
+                   (blocked (when helm-octopus-dim-blocked-tasks
+                              (org-entry-blocked-p)))
                    (local-olp (cl-some (lambda (root-olp)
                                          (let ((n (length root-olp)))
                                            (when (equal root-olp (-take n olp))
@@ -252,6 +258,7 @@ A and B must be Org elements."
                   (cons element
                         (cons (helm-octopus-scoped-ql--format element
                                 :local-olp local-olp
+                                :dim-blocked blocked
                                 :last-ts (octopus-timestamp-info-last-ts ts-info))
                               (point-marker))))))))
        (-non-nil)
@@ -281,11 +288,14 @@ A and B must be Org elements."
        (-map #'cdr)))
 
 (cl-defun helm-octopus-scoped-ql--format (element &key local-olp last-ts
-                                                  include-buffer-name)
+                                                  include-buffer-name
+                                                  dim-blocked)
   "Format each candidate from the data.
 
 ELEMENT, LOCAL-OLP, LAST-TS, and INCLUDE-BUFFER-NAME are passed
-from `helm-octopus-scoped-ql--candidates'."
+from `helm-octopus-scoped-ql--candidates'.
+
+If DIM-BLOCKED is non-nil, the heading will be dimmed."
   (declare (indent 1))
   (concat (if include-buffer-name
               (concat (buffer-name) ": ")
@@ -293,7 +303,9 @@ from `helm-octopus-scoped-ql--candidates'."
           (substring-no-properties (org-format-outline-path
                                     local-olp helm-octopus-scoped-ql-window-width))
           "/"
-          (org-get-heading)
+          (if dim-blocked
+              (propertize (org-get-heading) 'face 'org-agenda-dimmed-todo-face)
+            (org-get-heading))
           " "
           (if-let (scheduled (org-element-property :scheduled element))
               (concat " SCHEDULED:" (propertize (org-element-property :raw-value scheduled)
