@@ -67,6 +67,14 @@
     (org-with-point-at marker
       (org-todo 'done))))
 
+(defun helm-octopus-set-todo-state (marker)
+  "Change the todo state of an entry at MARKER."
+  (save-window-excursion
+    (org-goto-marker-or-bmk marker)
+    (org-with-wide-buffer
+     (org-narrow-to-subtree)
+     (org-todo))))
+
 (cl-defun helm-octopus--org-marker-sync-source (name markers
                                                      &key action)
   "Build a sync Helm source for Org markers.
@@ -158,6 +166,12 @@ Optionally, you can specify an ACTION."
 (defvar helm-octopus-scoped-ql-root-olps)
 (defvar helm-octopus-scoped-ql-window-width)
 (defvar helm-octopus-scoped-ql-project-query)
+
+(defmacro helm-octopus--action-as-command (func)
+  "Define an interactive command calling FUNC on the selection."
+  `(lambda ()
+     (interactive)
+     (,func (helm-get-selection))))
 
 (defcustom helm-octopus-entry-action
   (helm-make-actions
@@ -328,6 +342,15 @@ If DIM-BLOCKED is non-nil, the heading will be dimmed."
     :action 'helm-octopus-entry-action
     :volatile t))
 
+(defalias 'helm-octopus-org-todo-persistent-command
+  (helm-octopus--action-as-command helm-octopus-set-todo-state)
+  "Change the todo state of the selection.")
+
+(defvar helm-octopus-ql-map
+  (let ((m (make-composed-keymap helm-map)))
+    (define-key m (kbd "C-c C-t") #'helm-octopus-org-todo-persistent-command)
+    m))
+
 ;;;###autoload
 (defun helm-octopus-project-scoped-ql (&optional arg)
   "Project-scoped helm-org-ql.
@@ -350,7 +373,8 @@ project root."
              helm-octopus-scoped-ql-project-query project-query)
        (helm :prompt (format "Org ql [project: %s]: " (abbreviate-file-name root))
              :sources
-             'helm-octopus-project-scoped-ql-source)))
+             'helm-octopus-project-scoped-ql-source
+             :keymap 'helm-octopus-ql-map)))
     ('(16)
      (helm-octopus-global-ql))
     ('(4)
