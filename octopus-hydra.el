@@ -72,7 +72,8 @@
    "Org sparse trees"
    (("/r" octopus-sparse-tree "Projects")
     ("/a" octopus-sparse-tree-with-todos "Projects with todos")
-    ("/t" octopus-sparse-tree-todos "Project todos"))
+    ("/t" octopus-sparse-tree-todos "Project todos")
+    ("/p" octopus-sparse-tree-parents "Project parents"))
    "Capture"
    (("ct" octopus-capture-todo "Todo" :exit t)
     ("cc" octopus-capture-current-activity "Current task" :exit t)

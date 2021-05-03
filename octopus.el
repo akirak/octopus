@@ -399,6 +399,15 @@ Items a grouped by `octopus-todo-super-groups'."
      '(any-project))))
 
 ;;;###autoload
+(defun octopus-sparse-tree-parents ()
+  "Show sparse trees of project parents."
+  (interactive)
+  (org-ql-sparse-tree
+   (octopus--ql-expand
+     '(and (children (any-project))
+           (not (any-project))))))
+
+;;;###autoload
 (defun octopus-sparse-tree-with-todos ()
   "Show sparse trees of project roots with unfinished todos."
   (interactive)
