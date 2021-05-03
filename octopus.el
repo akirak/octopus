@@ -503,5 +503,57 @@ argument. This is intended for testing. ."
                    slot verify data)))
         (funcall (or dispatch (plist-get plist :dispatch)) data)))))
 
+;;;###autoload
+(defun octopus-register-project (root)
+  (interactive (list (->> (completing-read "Select a project: "
+                                           (octopus--uniq-files
+                                            (octopus--session-values (octopus--project-root))))
+                          (read-directory-name "Root directory of the project: "))))
+  (unless (and (derived-mode-p 'org-mode)
+               (not (org-before-first-heading-p)))
+    (user-error "Run this in org-mode"))
+  (let* ((vc-root (octopus--vc-root-dir root))
+         (remote (read-string "Remote URL: "
+                              (octopus--abbreviate-remote-url root)))
+         (remote (unless (string-empty-p remote)
+                   remote))
+         (worktrees (when vc-root
+                      (octopus--git-worktrees vc-root)))
+         (clone-dest (car worktrees)))
+    (if (file-equal-p root vc-root)
+        (progn
+          (when (or (octopus--org-project-remote)
+                    (octopus--org-project-dir))
+            (user-error "Already inside a project, so you cannot register a new project here"))
+          (octopus--capture-project
+           (save-excursion
+             (org-back-to-heading)
+             (point-marker))
+           :root root
+           :remote remote
+           :clone-dest clone-dest))
+      ;; TODO: Complex project
+      )))
+
+(cl-defun octopus--capture-project (marker &key root remote clone-dest)
+  "Create an Org subtree for a project."
+  (let* ((org-capture-entry (list "_" "octopus-project"
+                                  'entry
+                                  (list 'function
+                                        `(lambda () (org-goto-marker-or-bmk ,marker)))
+                                  (concat "* %?\n:PROPERTIES:\n"
+                                          (--> (list (cons octopus-dir-property-name
+                                                           (abbreviate-file-name root))
+                                                     (cons octopus-remote-repo-property-name
+                                                           remote)
+                                                     (cons octopus-clone-destination-property-name
+                                                           clone-dest))
+                                            (-filter #'cdr it)
+                                            (mapconcat (pcase-lambda (`(,key . ,value))
+                                                         (format ":%s: %s" key value))
+                                                       it "\n"))
+                                          "\n:END:"))))
+    (org-capture)))
+
 (provide 'octopus)
 ;;; octopus.el ends here
