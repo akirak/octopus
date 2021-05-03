@@ -574,27 +574,28 @@ local directory into which the repository should be cloned.
 This function uses `org-capture' to interactively create an Org
 entry. However, if IMMEDIATE-FINISH is non-nil, the capture
 session finishes immediately."
-  (let* ((org-capture-entry (list "_" "octopus-project"
-                                  'entry
-                                  (list 'function
-                                        `(lambda () (org-goto-marker-or-bmk ,marker)))
-                                  (concat "* "
-                                          (if immediate-finish
-                                              (or remote (abbreviate-file-name root))
-                                            "%?")
-                                          "\n:PROPERTIES:\n"
-                                          (--> (list (cons octopus-dir-property-name
-                                                           (abbreviate-file-name root))
-                                                     (cons octopus-remote-repo-property-name
-                                                           remote)
-                                                     (cons octopus-clone-destination-property-name
-                                                           clone-dest))
-                                            (-filter #'cdr it)
-                                            (mapconcat (pcase-lambda (`(,key . ,value))
-                                                         (format ":%s: %s" key value))
-                                                       it "\n"))
-                                          "\n:END:")
-                                  :immediate-finish immediate-finish)))
+  (let ((org-capture-entry
+         (list "_" "octopus-project"
+               'entry
+               (list 'function
+                     `(lambda () (org-goto-marker-or-bmk ,marker)))
+               (concat "* "
+                       (if immediate-finish
+                           (or remote (abbreviate-file-name root))
+                         "%?")
+                       "\n:PROPERTIES:\n"
+                       (--> (list (cons octopus-dir-property-name
+                                        (abbreviate-file-name root))
+                                  (cons octopus-remote-repo-property-name
+                                        remote)
+                                  (cons octopus-clone-destination-property-name
+                                        clone-dest))
+                         (-filter #'cdr it)
+                         (mapconcat (pcase-lambda (`(,key . ,value))
+                                      (format ":%s: %s" key value))
+                                    it "\n"))
+                       "\n:END:")
+               :immediate-finish immediate-finish)))
     (org-capture)))
 
 (provide 'octopus)
