@@ -100,6 +100,30 @@ The remote name is specified by `octopus-default-git-remote-name'."
       (split-string "\n")
       (-non-nil)))
 
+(defun octopus--git-worktrees ()
+  "Return a list of Git worktrees for the directory.
+
+This functions runs \"git worktree list\" command to get the
+working trees of the current repository.
+
+The returned value will be a list of directories, where the first
+item points to the master working tree as described in
+\"git-worktree (1)\" man page.
+
+If the directory is not inside a working tree, this function
+returns nil."
+  (save-match-data
+    (->> (ignore-errors
+           (split-string
+            (octopus--read-process "git" "worktree" "list" "--porcelain")
+            "\n"))
+         (-map (lambda (s)
+                 (when (string-match (rx bol "worktree" (+ space) (group (+ nonl)))
+                                     s)
+                   (match-string 1 s))))
+         (-non-nil)
+         (-map #'abbreviate-file-name))))
+
 (defun octopus--read-process (program &rest args)
   "Return the standard output from PROGRAM run with ARGS."
   (with-temp-buffer
