@@ -123,7 +123,8 @@ returns nil."
                                      s)
                    (match-string 1 s))))
          (-non-nil)
-         (-map #'abbreviate-file-name))))
+         (-map #'abbreviate-file-name)
+         (-map #'file-name-as-directory))))
 
 (defun octopus--read-process (program &rest args)
   "Return the standard output from PROGRAM run with ARGS."
