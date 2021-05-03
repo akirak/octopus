@@ -43,6 +43,9 @@
 (defconst octopus-remote-repo-property-name "OCTOPUS_REMOTE_REPO"
   "Org property that locates the remote repository of a project.")
 
+(defconst octopus-clone-destination-property-name "OCTOPUS_CLONE_DESTINATION"
+  "Org property that specifies the destination of git clone command.")
+
 (defcustom octopus-org-files #'org-agenda-files
   "Function to retrieve a list of source Org files."
   :group 'octopus

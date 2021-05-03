@@ -103,6 +103,9 @@ completion interface."
      (project-remote-property
       . (lambda (&rest args)
           `(property ,octopus-remote-repo-property-name ,@args)))
+     (project-clone-destination-property
+      . (lambda (&rest args)
+          `(property ,octopus-clone-destination-property-name ,@args)))
      (any-project
       . (lambda ()
           '(or (project-dir-property)
