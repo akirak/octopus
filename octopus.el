@@ -524,6 +524,12 @@ argument. This is intended for testing. ."
 
 ;;;###autoload
 (defun octopus-register-project (root)
+  "Register a project to the current Org tree.
+
+This function interactively creates an Org tree for a project
+into the Org entry at point.
+
+ROOT is the root directory of the project."
   (interactive (list (->> (completing-read "Select a project: "
                                            (octopus--uniq-files
                                             (octopus--session-values (octopus--project-root))))
@@ -556,7 +562,18 @@ argument. This is intended for testing. ."
 
 (cl-defun octopus--capture-project (marker &key root remote clone-dest
                                            immediate-finish)
-  "Create an Org subtree for a project."
+  "Create an Org subtree for a project.
+
+MARKER is the marker of an Org entry in which the project subtree
+should be created.
+
+ROOT, REMOTE, and CLONE-DEST are optional. ROOT is the root
+directory, REMOTE is a remote repository, and CLONE-DEST is a
+local directory into which the repository should be cloned.
+
+This function uses `org-capture' to interactively create an Org
+entry. However, if IMMEDIATE-FINISH is non-nil, the capture
+session finishes immediately."
   (let* ((org-capture-entry (list "_" "octopus-project"
                                   'entry
                                   (list 'function
