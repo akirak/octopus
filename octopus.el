@@ -544,13 +544,18 @@ argument. This is intended for testing. ."
       ;; TODO: Complex project
       )))
 
-(cl-defun octopus--capture-project (marker &key root remote clone-dest)
+(cl-defun octopus--capture-project (marker &key root remote clone-dest
+                                           immediate-finish)
   "Create an Org subtree for a project."
   (let* ((org-capture-entry (list "_" "octopus-project"
                                   'entry
                                   (list 'function
                                         `(lambda () (org-goto-marker-or-bmk ,marker)))
-                                  (concat "* %?\n:PROPERTIES:\n"
+                                  (concat "* "
+                                          (if immediate-finish
+                                              (or remote (abbreviate-file-name root))
+                                            "%?")
+                                          "\n:PROPERTIES:\n"
                                           (--> (list (cons octopus-dir-property-name
                                                            (abbreviate-file-name root))
                                                      (cons octopus-remote-repo-property-name
@@ -561,7 +566,8 @@ argument. This is intended for testing. ."
                                             (mapconcat (pcase-lambda (`(,key . ,value))
                                                          (format ":%s: %s" key value))
                                                        it "\n"))
-                                          "\n:END:"))))
+                                          "\n:END:")
+                                  :immediate-finish immediate-finish)))
     (org-capture)))
 
 (provide 'octopus)
