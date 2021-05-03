@@ -68,11 +68,13 @@
    "Org project"
    (("g" octopus-project-dir "Directory" :exit t)
     ("sd" octopus-org-set-project-dir "Set dir")
-    ("sr" octopus-org-set-project-remote-repo "Set remote"))
+    ("sr" octopus-org-set-project-remote-repo "Set remote")
+    ("sc" octopus-org-set-project-clone-destination "Set clone dest"))
    "Org sparse trees"
    (("/r" octopus-sparse-tree "Projects")
     ("/a" octopus-sparse-tree-with-todos "Projects with todos")
-    ("/t" octopus-sparse-tree-todos "Project todos"))
+    ("/t" octopus-sparse-tree-todos "Project todos")
+    ("/p" octopus-sparse-tree-parents "Project parents"))
    "Capture"
    (("ct" octopus-capture-todo "Todo" :exit t)
     ("cc" octopus-capture-current-activity "Current task" :exit t)

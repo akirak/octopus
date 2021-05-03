@@ -100,6 +100,32 @@ The remote name is specified by `octopus-default-git-remote-name'."
       (split-string "\n")
       (-non-nil)))
 
+(defun octopus--git-worktrees (dir)
+  "Return a list of Git worktrees for DIR.
+
+This functions runs \"git worktree list\" command to get the
+working trees of the current repository.
+
+The returned value will be a list of directories, where the first
+item points to the master working tree as described in
+\"git-worktree (1)\" man page.
+
+If the directory is not inside a working tree, this function
+returns nil."
+  (save-match-data
+    (->> (ignore-errors
+           (split-string
+            (let ((default-directory dir))
+              (octopus--read-process "git" "worktree" "list" "--porcelain"))
+            "\n"))
+         (-map (lambda (s)
+                 (when (string-match (rx bol "worktree" (+ space) (group (+ nonl)))
+                                     s)
+                   (match-string 1 s))))
+         (-non-nil)
+         (-map #'abbreviate-file-name)
+         (-map #'file-name-as-directory))))
+
 (defun octopus--read-process (program &rest args)
   "Return the standard output from PROGRAM run with ARGS."
   (with-temp-buffer
@@ -162,6 +188,11 @@ This is just a combination `project-root' and `project-current'
 which takes MAYBE-PROMPT as an argument, which see."
   (when-let (current (project-current maybe-prompt))
     (project-root current)))
+
+(defsubst octopus--vc-root-dir (dir)
+  "Return the VC root directory of DIR."
+  (let ((default-directory dir))
+    (vc-root-dir)))
 
 (defun octopus--frecency-timestamp-score (unix)
   "Calculate the time score of the given UNIX time."

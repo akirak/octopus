@@ -322,6 +322,16 @@ URL instead."
                        (octopus--session-values
                         (octopus--abbreviate-remote-url default-directory))))))
 
+;;;###autoload
+(defun octopus-org-set-project-clone-destination ()
+  "Set the property for the clone destination in Org."
+  (interactive)
+  (octopus--org-put-property-from-exp-once octopus-clone-destination-property-name
+    (completing-read "Clone destination: "
+                     (octopus--uniq-files
+                      (octopus--session-values
+                       (car (octopus--git-worktrees default-directory)))))))
+
 ;;;; Project todo list
 
 (defcustom octopus-todo-super-groups
@@ -397,6 +407,15 @@ Items a grouped by `octopus-todo-super-groups'."
   (org-ql-sparse-tree
    (octopus--ql-expand
      '(any-project))))
+
+;;;###autoload
+(defun octopus-sparse-tree-parents ()
+  "Show sparse trees of project parents."
+  (interactive)
+  (org-ql-sparse-tree
+   (octopus--ql-expand
+     '(and (children (any-project))
+           (not (any-project))))))
 
 ;;;###autoload
 (defun octopus-sparse-tree-with-todos ()
@@ -502,6 +521,82 @@ argument. This is intended for testing. ."
             (error "Test failed on the value of %s: %s returned non-nil on %s"
                    slot verify data)))
         (funcall (or dispatch (plist-get plist :dispatch)) data)))))
+
+;;;###autoload
+(defun octopus-register-project (root)
+  "Register a project to the current Org tree.
+
+This function interactively creates an Org tree for a project
+into the Org entry at point.
+
+ROOT is the root directory of the project."
+  (interactive (list (->> (completing-read "Select a project: "
+                                           (octopus--uniq-files
+                                            (octopus--session-values (octopus--project-root))))
+                          (read-directory-name "Root directory of the project: "))))
+  (unless (and (derived-mode-p 'org-mode)
+               (not (org-before-first-heading-p)))
+    (user-error "Run this in org-mode"))
+  (let* ((vc-root (octopus--vc-root-dir root))
+         (remote (read-string "Remote URL: "
+                              (octopus--abbreviate-remote-url root)))
+         (remote (unless (string-empty-p remote)
+                   remote))
+         (worktrees (when vc-root
+                      (octopus--git-worktrees vc-root)))
+         (clone-dest (car worktrees)))
+    (if (file-equal-p root vc-root)
+        (progn
+          (when (or (octopus--org-project-remote)
+                    (octopus--org-project-dir))
+            (user-error "Already inside a project, so you cannot register a new project here"))
+          (octopus--capture-project
+           (save-excursion
+             (org-back-to-heading)
+             (point-marker))
+           :root root
+           :remote remote
+           :clone-dest clone-dest))
+      ;; TODO: Complex project
+      )))
+
+(cl-defun octopus--capture-project (marker &key root remote clone-dest
+                                           immediate-finish)
+  "Create an Org subtree for a project.
+
+MARKER is the marker of an Org entry in which the project subtree
+should be created.
+
+ROOT, REMOTE, and CLONE-DEST are optional. ROOT is the root
+directory, REMOTE is a remote repository, and CLONE-DEST is a
+local directory into which the repository should be cloned.
+
+This function uses `org-capture' to interactively create an Org
+entry. However, if IMMEDIATE-FINISH is non-nil, the capture
+session finishes immediately."
+  (let ((org-capture-entry
+         (list "_" "octopus-project"
+               'entry
+               (list 'function
+                     `(lambda () (org-goto-marker-or-bmk ,marker)))
+               (concat "* "
+                       (if immediate-finish
+                           (or remote (abbreviate-file-name root))
+                         "%?")
+                       "\n:PROPERTIES:\n"
+                       (--> (list (cons octopus-dir-property-name
+                                        (abbreviate-file-name root))
+                                  (cons octopus-remote-repo-property-name
+                                        remote)
+                                  (cons octopus-clone-destination-property-name
+                                        clone-dest))
+                         (-filter #'cdr it)
+                         (mapconcat (pcase-lambda (`(,key . ,value))
+                                      (format ":%s: %s" key value))
+                                    it "\n"))
+                       "\n:END:")
+               :immediate-finish immediate-finish)))
+    (org-capture)))
 
 (provide 'octopus)
 ;;; octopus.el ends here
