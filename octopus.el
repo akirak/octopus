@@ -322,6 +322,16 @@ URL instead."
                        (octopus--session-values
                         (octopus--abbreviate-remote-url default-directory))))))
 
+;;;###autoload
+(defun octopus-org-set-project-clone-destination ()
+  "Set the property for the clone destination in Org."
+  (interactive)
+  (octopus--org-put-property-from-exp-once octopus-clone-destination-property-name
+    (completing-read "Clone destination: "
+                     (octopus--uniq-files
+                      (octopus--session-values
+                       (car (octopus--git-worktrees default-directory)))))))
+
 ;;;; Project todo list
 
 (defcustom octopus-todo-super-groups
