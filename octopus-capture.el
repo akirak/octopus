@@ -107,8 +107,6 @@ See `org-capture-templates' for the syntax."
      ,(octopus-entry-capture-template :todo "TODO"
                                       :heading "%?"
                                       :tag-prompt t))
-    (project
-     (function octopus-capture-project-template))
     (current-with-input
      ,(octopus-entry-capture-template
        :todo "STARTED"
@@ -117,45 +115,6 @@ See `org-capture-templates' for the syntax."
   "Alist of todo capture templates."
   :type '(alist :key-type symbol
                 :value-type (cons string plist)))
-
-(defcustom octopus-capture-project-language-fn nil
-  "Function to retrieve languages of a project.
-
-If this variable is set to a function, it is used to produce the
-value of LANGUAGE property in an entry created by
-`octopus-capture-project-template' function. The function must
-take a directory as an argument and return a string.
-
-If it is nil or the function returns nil, the captured entry
-won't get a LANGUAGE property by default."
-  :type 'function)
-
-(defun octopus-capture-project-template ()
-  "Construct the template body for `octopus-capture-project'.
-
-This won't take effect unless you put the function in
-`octopus-capture-template-alist' for capturing projects."
-  (let ((root (-some->> (project-current)
-                (project-root)))
-        (vc-root (vc-root-dir))
-        (remote (octopus--abbreviate-remote-url default-directory)))
-    (octopus-entry-capture-template
-     :todo nil
-     :heading "%?"
-     :properties
-     (->> (list (cons "OCTOPUS_REMOTE_REPO"
-                      (when (and root vc-root
-                                 (file-equal-p root vc-root))
-                        remote))
-                (cons "OCTOPUS_DIR"
-                      (when root
-                        (abbreviate-file-name root)))
-                (cons "LANGUAGE"
-                      (when (and root
-                                 (fboundp octopus-capture-project-language-fn))
-                        (funcall octopus-capture-project-language-fn root))))
-          (-filter #'cdr))
-     :body "")))
 
 (defun octopus--capture-entry-to-marker (marker template &rest props)
   "Capture an entry to a given marker.
@@ -175,16 +134,6 @@ is a plist as in each entry in `org-capture-templates'."
   (list 'function (lambda () (org-refile '(4))))
   "`org-capture' location of `octopus-capture-project' command."
   :type 'sexp)
-
-;;;###autoload
-(defun octopus-capture-project ()
-  "Create an Org subtree for the current project."
-  (interactive)
-  (let ((org-capture-entry `("_" "octopus-project"
-                             entry
-                             ,octopus-capture-project-location
-                             ,@(alist-get 'project octopus-capture-template-alist))))
-    (org-capture)))
 
 (cl-defun octopus--todo-capture-location (&key root remote)
   "Return a marker in which todo entries should be created.
