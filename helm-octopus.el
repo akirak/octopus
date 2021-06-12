@@ -164,7 +164,7 @@ Optionally, you can specify an ACTION."
 ;;;; Project-scoped helm-org-ql
 
 (defvar helm-octopus-scoped-ql-root-olps)
-(defvar helm-octopus-scoped-ql-window-width)
+(defvar helm-octopus-window-width)
 (defvar helm-octopus-scoped-ql-project-query)
 
 (defmacro helm-octopus--action-as-command (func)
@@ -315,7 +315,7 @@ If DIM-BLOCKED is non-nil, the heading will be dimmed."
               (concat (buffer-name) ": ")
             "")
           (substring-no-properties (org-format-outline-path
-                                    local-olp helm-octopus-scoped-ql-window-width))
+                                    local-olp helm-octopus-window-width))
           "/"
           (if dim-blocked
               (propertize (org-get-heading) 'face 'org-agenda-dimmed-todo-face)
@@ -369,7 +369,7 @@ project root."
             (project-query `(project ,root)))
        (setq helm-octopus-scoped-ql-root-olps (octopus--ql-select project-query
                                                 :action '(org-get-outline-path t t))
-             helm-octopus-scoped-ql-window-width (window-width (helm-window))
+             helm-octopus-window-width (window-width (helm-window))
              helm-octopus-scoped-ql-project-query project-query)
        (helm :prompt (format "Org ql [project: %s]: " (abbreviate-file-name root))
              :sources
@@ -405,7 +405,7 @@ project root."
 (defun helm-octopus-global-ql ()
   "Org-ql from all entries in `octopus-org-files'."
   (interactive)
-  (setq helm-octopus-scoped-ql-window-width (window-width (helm-window)))
+  (setq helm-octopus-window-width (window-width (helm-window)))
   (helm :prompt "Org ql: "
         :sources 'helm-octopus-global-ql-source))
 
