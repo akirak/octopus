@@ -96,13 +96,21 @@ See the documentation on `hierarchy-labelfn-button'."
               (-map (pcase-lambda (`(,step . ,group-entries))
                       (if (= 1 (length group-entries))
                           group-entries
-                        (let ((trees (to-trees (map-olp #'cdr group-entries))))
-                          (if (= 1 (length trees))
-                              (map-olp (lambda (olp) (cons step olp)) trees)
-                            (list (make-octopus-hierarchy-context-tree
-                                   :olp (list step)
-                                   :filename filename
-                                   :leaves trees)))))))
+                        (if-let (direct (--find (null (octopus-hierarchy-context-tree-olp it))
+                                                group-entries))
+                            (progn
+                              (setf (octopus-hierarchy-context-tree-olp direct)
+                                    (list step))
+                              (setf (octopus-hierarchy-context-tree-leaves direct)
+                                    (to-trees (-remove-item direct group-entries)))
+                              (list direct))
+                          (let ((trees (to-trees (map-olp #'cdr group-entries))))
+                            (if (= 1 (length trees))
+                                (map-olp (lambda (olp) (cons step olp)) trees)
+                              (list (make-octopus-hierarchy-context-tree
+                                     :olp (list step)
+                                     :filename filename
+                                     :leaves trees))))))))
               (-flatten-n 1)
               (-filter #'octopus-hierarchy-context-tree-olp))))))
     (funcall (if octopus-hierarchy-flat-contexts
@@ -111,16 +119,17 @@ See the documentation on `hierarchy-labelfn-button'."
              (with-current-buffer (or (find-buffer-visiting filename)
                                       (find-file-noselect filename))
                (org-save-outline-visibility t
-                 (org-ql-select (current-buffer)
-                   (octopus--ql-expand '(and (children (any-project))
-                                             (not (or (any-project)
-                                                      (ancestors (any-project))))))
-                   :action
-                   `(make-octopus-hierarchy-context-tree
-                     :filename ,filename
-                     :marker (point-marker)
-                     :olp (org-get-outline-path t)
-                     :leaves nil)))))))
+                 (org-with-wide-buffer
+                  (org-ql-select (current-buffer)
+                    (octopus--ql-expand '(and (children (any-project))
+                                              (not (or (any-project)
+                                                       (ancestors (any-project))))))
+                    :action
+                    `(make-octopus-hierarchy-context-tree
+                      :filename ,filename
+                      :marker (point-marker)
+                      :olp (org-get-outline-path t)
+                      :leaves nil))))))))
 
 (cl-defmethod octopus--hierarchy-accept ((x octopus-hierarchy-file-tree))
   t)
@@ -141,7 +150,7 @@ See the documentation on `hierarchy-labelfn-button'."
 
 (cl-defmethod octopus--hierarchy-children ((x octopus-hierarchy-context-tree))
   (append (octopus-hierarchy-context-tree-leaves x)
-          (org-with-point-at (octopus-hierarchy-context-tree-marker x)
+          (org-with-point-at (octopus--hierarchy-marker x)
             (let ((subtree-end (save-excursion
                                  (org-end-of-subtree)))
                   (level (org-reduced-level (org-outline-level)))
@@ -168,14 +177,17 @@ See the documentation on `hierarchy-labelfn-button'."
   (or (octopus-hierarchy-context-tree-marker context)
       (let* ((child (car (octopus-hierarchy-context-tree-leaves x)))
              (child-marker (octopus--hierarchy-marker child))
-             (depth (octopus--hierarchy-olp child)))
+             (depth (length (octopus-hierarchy-context-tree-olp child))))
         (org-with-point-at child-marker
-          (let ((start-level (org-reduced-level (org-outline-level))))
-            (catch 'marker
-              (while (re-search-backward org-heading-regexp nil)
-                (when (= (org-reduced-level (org-outline-level))
-                         (- start-level depth))
-                  (throw 'marker (point-marker))))))))))
+          (let* ((start-level (org-reduced-level (org-outline-level)))
+                 (marker (catch 'marker
+                           (while (re-search-backward org-heading-regexp nil)
+                             (when (= (org-reduced-level (org-outline-level))
+                                      (- start-level depth))
+                               (throw 'marker (point-marker)))))))
+            ;; Cache the marker
+            (setf (octopus-hierarchy-context-tree-marker context) marker)
+            marker)))))
 
 ;;;;; octopus-hierarchy-project-tree
 
@@ -207,7 +219,9 @@ See the documentation on `hierarchy-labelfn-button'."
   (let ((hierarchy (hierarchy-new)))
     (hierarchy-add-trees hierarchy
                          (--map (make-octopus-hierarchy-file-tree :filename it)
-                                (list (org-starter-locate-file "practice.org" nil t)))
+                                (list (org-starter-locate-file "practice.org" nil t))
+                                ;; (octopus-org-files)
+                                )
                          #'octopus--hierarchy-parent
                          #'octopus--hierarchy-children)
     hierarchy))
