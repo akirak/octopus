@@ -598,5 +598,6 @@ session finishes immediately."
                :immediate-finish immediate-finish)))
     (org-capture)))
 
+
 (provide 'octopus)
 ;;; octopus.el ends here

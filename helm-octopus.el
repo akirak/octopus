@@ -409,5 +409,49 @@ project root."
   (helm :prompt "Org ql: "
         :sources 'helm-octopus-global-ql-source))
 
+(defun helm-octopus-project-parents ()
+  (interactive)
+  (setq helm-octopus-window-width (window-width (helm-window)))
+  (helm :prompt "Project parents: "
+        :sources (list (helm-build-sync-source "Project parents: "
+                         :candidates
+                         (octopus--ql-select '(and (children (any-project))
+                                                   (not (any-project)))
+                           :action
+                           '(cons (helm-octopus--format-project-parent) 
+                                  (point-marker)))
+                         :multiline t
+                         :persistent-action #'helm-octopus-show-marker
+                         :action 'helm-octopus-entry-action))))
+
+(defun helm-octopus--format-project-parent ()
+  (let ((parent-tags (org-get-tags))
+        (subtree-end (save-excursion
+                       (org-end-of-subtree)))
+        (parent-level (org-reduced-level (org-outline-level)))
+        members)
+    (cl-flet
+        ((format-tags (tags)
+                      (if tags
+                          (propertize (concat ":" (string-join tags ":") ":")
+                                      'face 'org-tag)
+                        "")))
+      (save-excursion
+        (while (re-search-forward org-heading-regexp subtree-end t)
+          (when-let (identity (and (= (org-reduced-level (org-outline-level))
+                                      (1+ parent-level))
+                                   (or (octopus--org-project-remote)
+                                       (octopus--org-project-dir))))
+            
+            (push (concat identity " "
+                          (format-tags (org-get-tags nil t)))
+                  members)
+            (org-end-of-subtree))))
+      (concat (org-format-outline-path (org-get-outline-path t t)
+                                       helm-octopus-window-width)
+              "  " (format-tags parent-tags)
+              "\n"
+              (string-join members "; ")))))
+
 (provide 'helm-octopus)
 ;;; helm-octopus.el ends here
