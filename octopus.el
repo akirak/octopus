@@ -551,7 +551,7 @@ in string and a function that returns the value of the property."
       (string-join languages " | "))))
 
 ;;;###autoload
-(defun octopus-register-project (root &optional immediate-finish)
+(cl-defun octopus-register-project (root &key immediate-finish)
   "Register a project to the current Org tree.
 
 ROOT is the root directory of the project.
