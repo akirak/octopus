@@ -77,8 +77,7 @@
     ("/p" octopus-sparse-tree-parents "Project parents"))
    "Capture"
    (("ct" octopus-capture-todo "Todo" :exit t)
-    ("cc" octopus-capture-current-activity "Current task" :exit t)
-    ("cp" octopus-capture-project "Project" :exit t))))
+    ("cc" octopus-capture-current-activity "Current task" :exit t))))
 
 ;;;###autoload (autoload 'octopus-hydra "octopus-hydra")
 (defalias 'octopus-hydra #'octopus-hydra/body)
