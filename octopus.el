@@ -512,8 +512,8 @@ argument. This is intended for testing. ."
                       (slot-value project slot))
                      (octopus-org-project-group-class
                       (->> (oref project projects)
-                           (-map (lambda (project) (slot-value project slot)))
-                           (reduce-data slot))))))
+                        (-map (lambda (project) (slot-value project slot)))
+                        (reduce-data slot))))))
       (let* ((slot (plist-get plist :slot))
              (data (get-data slot)))
         (when-let (verify (plist-get plist :verify))
@@ -533,7 +533,8 @@ ROOT is the root directory of the project."
   (interactive (list (->> (completing-read "Select a project: "
                                            (octopus--uniq-files
                                             (octopus--session-values (octopus--project-root))))
-                          (read-directory-name "Root directory of the project: "))))
+                       (read-directory-name "Root directory of the project: ")
+                       (abbreviate-file-name))))
   (unless (and (derived-mode-p 'org-mode)
                (not (org-before-first-heading-p)))
     (user-error "Run this in org-mode"))
