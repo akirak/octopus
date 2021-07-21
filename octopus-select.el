@@ -145,7 +145,7 @@ project or project group."
   :type '(repeat string))
 
 (defcustom octopus-select-project-extra-fields
-  '((language (org-entry-get nil "LANGUAGE" t)
+  '((language (org-entry-get nil "OCTOPUS_LANGUAGE" t)
               (lambda (languages)
                 (string-join (-uniq languages) " ")))
     (tags (org-get-tags)
