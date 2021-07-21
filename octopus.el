@@ -551,7 +551,7 @@ in string and a function that returns the value of the property."
       (string-join languages " | "))))
 
 ;;;###autoload
-(cl-defun octopus-register-project (root &key immediate-finish)
+(cl-defun octopus-register-project (root &key noninteractive)
   "Register a project to the current Org tree.
 
 ROOT is the root directory of the project.
@@ -559,7 +559,7 @@ ROOT is the root directory of the project.
 This function creates an Org tree for the specified project into
 an Org entry at point. It starts an `org-capture' session which
 lets you describe a project interactively. However, if
-IMMEDIATE-FINISH is non-nil, the capture session is finished
+NONINTERACTIVE is non-nil, the capture session is finished
 immediately, which allows programmatic use of this function."
   (interactive (list (->> (completing-read "Select a project: "
                                            (octopus--uniq-files
@@ -570,8 +570,11 @@ immediately, which allows programmatic use of this function."
                (not (org-before-first-heading-p)))
     (user-error "Run this in org-mode"))
   (let* ((vc-root (octopus--vc-root-dir root))
-         (remote (read-string "Remote URL: "
-                              (octopus--abbreviate-remote-url root)))
+         (default-remote-url (when vc-root
+                               (octopus--abbreviate-remote-url root)))
+         (remote (if noninteractive
+                     default-remote-url
+                   (read-string "Remote URL: " default-remote-url)))
          (remote (unless (string-empty-p remote)
                    remote))
          (worktrees (when vc-root
