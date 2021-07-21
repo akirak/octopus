@@ -592,7 +592,7 @@ immediately, which allows programmatic use of this function."
            :root root
            :remote remote
            :clone-dest clone-dest
-           :immediate-finish immediate-finish
+           :immediate-finish noninteractive
            :other-props
            (let ((default-directory root))
              (-map (pcase-lambda (`(,prop . ,fn))
