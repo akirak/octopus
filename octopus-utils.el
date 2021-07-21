@@ -282,5 +282,45 @@ X must be an instance of `octopus-timestamp-info'."
   (unless (and a (time-less-p a b))
     b))
 
+(defcustom octopus-linguist-executable "linguist"
+  "Path to the executable of linguist."
+  :type 'file
+  :group 'octopus)
+
+(defcustom octopus-linguist-threshold 20
+  "Threshold on which languages to include in the result."
+  :type 'number
+  :group 'octopus)
+
+(defun octopus-repository-language-list (&optional root force)
+  "Return a list of languages used in the repository.
+
+ROOT should point to the root of a Git repository. If it is
+omitted, it is retrieved using `vc-root'.
+
+This function depends on GitHub linguist and checks existence of
+`octopus-linguist-executable'. You can download it from
+<https://github.com/github/linguist>. If FORCE is non-nil, it
+skips the check and throws an error if the executable does not
+exist."
+  (->> (let ((default-directory (or root
+                                    (octopus--vc-root-dir default-directory)
+                                    (error "No VC root found"))))
+         (when (or force
+                   ;; Run the check here to support TRAMP.
+                   (executable-find octopus-linguist-executable))
+           (process-lines octopus-linguist-executable)))
+    (-map (lambda (line)
+            (save-match-data
+              (when (string-match (rx bol (group (+ digit) (?  "." (* digit))) "%"
+                                      (+ space) (group (+ anything)) eol)
+                                  line)
+                (let ((percent (match-string 1 line))
+                      (language (match-string 2 line)))
+                  (when (>= (string-to-number percent)
+                            octopus-linguist-threshold)
+                    language))))))
+    (-non-nil)))
+
 (provide 'octopus-utils)
 ;;; octopus-utils.el ends here

@@ -100,6 +100,18 @@ This option lets the user select a buffer from it."
   :type '(choice (const windows)
                  (const buffers)))
 
+(defcustom octopus-use-linguist t
+  "Whether to retrieve languages using linguist.
+
+If this value is non-nil, octopus will retrieve a list of
+languages in a target repository when desirable and it is
+available.
+
+This option currently affects `octopus-register-project'.
+
+See `octopus-repository-language-list' for details."
+  :type 'boolean)
+
 ;;;; Macros
 
 (defmacro octopus--org-put-property-from-exp-once (property exp)
@@ -522,6 +534,22 @@ argument. This is intended for testing. ."
                    slot verify data)))
         (funcall (or dispatch (plist-get plist :dispatch)) data)))))
 
+(defcustom octopus-extra-project-properties
+  `(("OCTOPUS_LANGUAGES"
+     . octopus-make-languages-property))
+  "Alist of additional properties to include in created project entries.
+
+Each entry should be a cons cell of the property name
+in string and a function that returns the value of the property."
+  :type '(alist :key-type string
+                :value-type function))
+
+(defun octopus-make-languages-property ()
+  "Build the value of \"OCTOPUS_LANGUAGES\" property in the directory."
+  (when octopus-use-linguist
+    (when-let (languages (octopus-repository-language-list))
+      (string-join languages " | "))))
+
 ;;;###autoload
 (defun octopus-register-project (root)
   "Register a project to the current Org tree.
@@ -546,7 +574,7 @@ ROOT is the root directory of the project."
          (worktrees (when vc-root
                       (octopus--git-worktrees vc-root)))
          (clone-dest (car worktrees)))
-    (if (file-equal-p root vc-root)
+    (if (or (not vc-root) (file-equal-p root vc-root))
         (progn
           (when (or (octopus--org-project-remote)
                     (octopus--org-project-dir))
@@ -557,11 +585,17 @@ ROOT is the root directory of the project."
              (point-marker))
            :root root
            :remote remote
-           :clone-dest clone-dest))
+           :clone-dest clone-dest
+           :other-props
+           (let ((default-directory root))
+             (-map (pcase-lambda (`(,prop . ,fn))
+                     (cons prop (funcall fn)))
+                   octopus-extra-project-properties))))
       ;; TODO: Complex project
       )))
 
 (cl-defun octopus--capture-project (marker &key root remote clone-dest
+                                           other-props
                                            immediate-finish)
   "Create an Org subtree for a project.
 
@@ -571,6 +605,9 @@ should be created.
 ROOT, REMOTE, and CLONE-DEST are optional. ROOT is the root
 directory, REMOTE is a remote repository, and CLONE-DEST is a
 local directory into which the repository should be cloned.
+
+OTHER-PROPS is an alist of additional properties to include in
+the drawer. Properties that have nil values are omitted.
 
 This function uses `org-capture' to interactively create an Org
 entry. However, if IMMEDIATE-FINISH is non-nil, the capture
@@ -585,12 +622,13 @@ session finishes immediately."
                            (or remote (abbreviate-file-name root))
                          "%?")
                        "\n:PROPERTIES:\n"
-                       (--> (list (cons octopus-dir-property-name
-                                        (abbreviate-file-name root))
-                                  (cons octopus-remote-repo-property-name
-                                        remote)
-                                  (cons octopus-clone-destination-property-name
-                                        clone-dest))
+                       (--> (append (list (cons octopus-dir-property-name
+                                                (abbreviate-file-name root))
+                                          (cons octopus-remote-repo-property-name
+                                                remote)
+                                          (cons octopus-clone-destination-property-name
+                                                clone-dest))
+                                    other-props)
                          (-filter #'cdr it)
                          (mapconcat (pcase-lambda (`(,key . ,value))
                                       (format ":%s: %s" key value))
