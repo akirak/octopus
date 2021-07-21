@@ -551,13 +551,16 @@ in string and a function that returns the value of the property."
       (string-join languages " | "))))
 
 ;;;###autoload
-(defun octopus-register-project (root)
+(defun octopus-register-project (root &optional immediate-finish)
   "Register a project to the current Org tree.
 
-This function interactively creates an Org tree for a project
-into the Org entry at point.
+ROOT is the root directory of the project.
 
-ROOT is the root directory of the project."
+This function creates an Org tree for the specified project into
+an Org entry at point. It starts an `org-capture' session which
+lets you describe a project interactively. However, if
+IMMEDIATE-FINISH is non-nil, the capture session is finished
+immediately, which allows programmatic use of this function."
   (interactive (list (->> (completing-read "Select a project: "
                                            (octopus--uniq-files
                                             (octopus--session-values (octopus--project-root))))
@@ -586,6 +589,7 @@ ROOT is the root directory of the project."
            :root root
            :remote remote
            :clone-dest clone-dest
+           :immediate-finish immediate-finish
            :other-props
            (let ((default-directory root))
              (-map (pcase-lambda (`(,prop . ,fn))
