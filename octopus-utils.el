@@ -190,9 +190,10 @@ which takes MAYBE-PROMPT as an argument, which see."
     (project-root current)))
 
 (defsubst octopus--vc-root-dir (dir)
-  "Return the VC root directory of DIR."
-  (let ((default-directory dir))
-    (vc-root-dir)))
+  "Return the VC root directory of DIR.
+
+Git is only supported at present."
+  (locate-dominating-file dir ".git"))
 
 (defun octopus--frecency-timestamp-score (unix)
   "Calculate the time score of the given UNIX time."
